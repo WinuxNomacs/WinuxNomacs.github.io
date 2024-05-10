@@ -1,5 +1,5 @@
-site_name: mysite
-site_url: https://winuxnomacs.github.io/mysite
+site_name: docs
+site_url: https://winuxnomacs.github.io/docs
 theme:
   name: material
   features:

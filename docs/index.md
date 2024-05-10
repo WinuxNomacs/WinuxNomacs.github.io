@@ -1,4 +1,4 @@
-# Welcome to MkDocs
+# What the hell is a WinuxNomacs?
 
 For full documentation visit [mkdocs.org](https://www.mkdocs.org).
 

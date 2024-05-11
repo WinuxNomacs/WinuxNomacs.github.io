@@ -1,12 +1,24 @@
 site_name: docs
-site_url: https://winuxnomacs.github.io/docs
+site_url: https://winuxnomacs.github.io
 theme:
   font: false
   name: material
   features:
+    - header.autohide
     - search.suggest
     - search.highlight
+    - navigation.footer
     - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.expand
+    - navigation.path
+    - navigation.top
+    - toc.follow
+    - toc.integrate
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
@@ -20,8 +32,19 @@ theme:
         name: Switch to light mode
 plugins:
   - search
+  - tags
+  - privacy:
+      enabled: true
+      cache: true
+      cache_dir: .cache/plugins/privacy
+      assets: true
+      assets_fetch: true
+      assets_fetch_dir: assets/external
 extra:
-  consent:
-    title: Cookie consent
-    description: >-
-      "C" is for cookie and cookies are for me. Here, have some cookies.
+  generator: true
+copyright: Copyright &copy; 2024 Winux Nomacs
+markdown_extensions:
+  - toc:
+      permalink: trueq
+  - tables
+  

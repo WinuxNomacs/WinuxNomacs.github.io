@@ -1,20 +1,18 @@
 site_name: docs
 site_url: https://winuxnomacs.github.io/docs
 theme:
+  font: false
   name: material
   features:
     - search.suggest
     - search.highlight
     - navigation.instant
   palette:
-    # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-
-    # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       toggle:

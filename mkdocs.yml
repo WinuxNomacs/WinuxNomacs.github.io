@@ -1,4 +1,4 @@
-site_name: docs
+site_name: Winux Nomacs
 site_url: https://winuxnomacs.github.io
 theme:
   font: false
@@ -47,4 +47,5 @@ markdown_extensions:
   - toc:
       permalink: trueq
   - tables
-  
+  - attr_list
+  - md_in_html

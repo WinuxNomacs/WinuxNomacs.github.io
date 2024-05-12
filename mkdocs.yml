@@ -47,5 +47,5 @@ markdown_extensions:
   - toc:
       permalink: trueq
   - tables
-  - attr_list
-  - md_in_html
+  # - attr_list
+  # - md_in_html

@@ -2,7 +2,7 @@
 
 Source for <https://winuxnomacs.github.io/>: a single page with a gargoyle's head floating in front of a spiral
 galaxy that turns slowly in 3D space. "Winux Nomacs" sits above the head and links to
-<https://github.com/winuxnomacs>. Quotes appear below it one at a time, printed letter by letter by a laser beam from the gargoyle's glowing eye. The head drifts, its eye glow pulses, and it tilts toward the mouse (or the
+<https://github.com/winuxnomacs>; pointing at it makes it rise up to meet the pointer. Quotes appear below it one at a time, printed letter by letter by a laser beam from the gargoyle's glowing eye. The head drifts, its eye glow pulses, and it tilts toward the mouse (or the
 phone's tilt, where the browser allows it) while the galaxy shifts behind it for depth. Visitors who have turned
 on "reduce motion" in their system settings get a still picture.
 

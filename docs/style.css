@@ -91,7 +91,8 @@ body {
   background-position: 100% 0, 0 0;
   filter: var(--metal);
   animation: gleam 7s ease-in-out infinite;
-  transition: filter 0.3s ease;
+  /* The rise on hover overshoots a touch, then settles. */
+  transition: filter 0.35s ease, transform 0.35s cubic-bezier(0.2, 0.8, 0.3, 1.25);
 }
 
 @keyframes gleam {
@@ -99,9 +100,13 @@ body {
   80%, 100% { background-position: 0% 0, 0 0; }
 }
 
+/* On hover (or focus) the title rises to meet the pointer: it grows, lifts, and its shadow falls further below
+   and spreads, as if it had come up off the page. The same shadows as --metal, so the filter animates smoothly. */
 .banner-link:hover,
 .banner-link:focus-visible {
-  filter: var(--metal) brightness(1.15);
+  transform: translateY(-3px) scale(1.15);
+  filter: drop-shadow(0 1px 0 #7d838e) drop-shadow(0 1px 0 #50555e) drop-shadow(0 1px 0 #2e3137)
+          drop-shadow(0 9px 7px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 12px rgba(0, 0, 0, 0.8)) brightness(1.15);
 }
 
 .banner-link:focus-visible {
@@ -710,5 +715,6 @@ body {
   .tilt { transform: none; }
   .quote, .quote.is-out { transform: none; filter: var(--metal); }
   .banner-link, .quote { animation: none; }
+  .banner-link:hover, .banner-link:focus-visible { transform: none; }
   .laser, .eye-beam { display: none; }
 }

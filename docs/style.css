@@ -166,7 +166,7 @@ body {
   100%    { text-shadow: 0 0 0 rgba(255, 255, 255, 0), 0 0 0 rgba(var(--glow), 0), 0 0 0 rgba(var(--glow), 0); }
 }
 
-/* The laser that prints the quote: a hot point on the letter being printed, with its beam coming down from above.
+/* The laser that prints the quote: a hot point on the letter being printed, fed by a beam from the gargoyle's eye.
    quotes.js moves it from letter to letter in step with the typing, then fades it out. */
 .laser {
   position: absolute;
@@ -182,16 +182,37 @@ body {
   pointer-events: none;
 }
 
-.laser::before {
+/* The beam from the eye to the laser's point; quotes.js aims and stretches it every frame, since the head drifts.
+   It lives on the body, because the quote's filter would trap a fixed-position child. */
+.eye-beam {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  height: 2px;
+  margin-top: -1px;
+  transform-origin: 0 50%;
+  border-radius: 1px;
+  background: linear-gradient(to right, rgba(255, 244, 214, 0.95), rgba(var(--glow), 0.8) 55%, #fff);
+  box-shadow: 0 0 6px 1px rgba(var(--glow), 0.7), 0 0 16px 3px rgba(var(--glow), 0.3);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Where the beam leaves the eye. */
+.eye-beam::before {
   content: '';
   position: absolute;
-  left: 50%;
-  bottom: 50%;
-  width: 1px;
-  height: 3em;
-  transform: translateX(-50%);
-  background: linear-gradient(to top, rgba(255, 240, 200, 0.9), rgba(var(--glow), 0));
+  left: -7px;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, #fff, rgba(var(--glow), 0.8) 45%, rgba(var(--glow), 0));
 }
+
+.touring .eye-beam { display: none; }
 
 /* Words never break across lines between letters. */
 .quote .word {
@@ -472,5 +493,5 @@ body {
   .tilt { transform: none; }
   .quote, .quote.is-out { transform: none; filter: var(--metal); }
   .banner-link, .quote { animation: none; }
-  .laser { display: none; }
+  .laser, .eye-beam { display: none; }
 }

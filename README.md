@@ -14,7 +14,7 @@ Clicking the head (or pressing Enter on it) starts a tour. The head and the quot
 the top edge, and the camera flies through the galaxy to the Sun's real place in it, about 26,700 light-years from
 the centre, where a marker appears. Then it dives into the Sun, and the solar system fades in: the Sun, the eight
 planets and their orbits, with each planet where it really is on the visitor's date (worked out in the browser from
-NASA JPL's Keplerian elements). The camera eases in towards the Earth, marked "You are here". Distances are to
+NASA JPL's Keplerian elements). The camera eases in towards the Earth, marked "You are here", with the date and how far the Earth is from the Sun that day, in miles and kilometres. Distances are to
 scale; the planets are drawn larger. "← Back", a click anywhere or Esc flies back from any point. With "reduce
 motion" on, each step cuts straight to the next instead of flying.
 

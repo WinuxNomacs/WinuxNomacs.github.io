@@ -483,6 +483,8 @@ body {
     transform: translateX(-50%);
     text-align: center;
   }
+
+  #earth-distance span { display: block; }
 }
 
 @media (prefers-reduced-motion: reduce) {

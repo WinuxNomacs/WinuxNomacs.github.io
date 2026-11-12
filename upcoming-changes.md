@@ -2,7 +2,26 @@
 
 ## Phases (current and upcoming)
 
-- **Later:** 1. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
+- **Up next:** 1. The head pulses to invite a click
+- **Later:** 2. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
+
+## The head pulses to invite a click
+
+**Request** (from `new.md`, 2026-11-12): make the gargoyle head pulse rhythmically, as if enticing the visitor to
+click it.
+
+**Builds on:** in `docs/style.css`, the head (`.float`, which becomes a button, `.float[role="button"]`, once WebGL
+works) already drifts up and down every 7 s, and its eye glow (`.eye-glow`) swells every 3.2 s. Clicking the head
+starts the tour.
+
+**Proposed phase:** a rhythmic pulse on the head only while it is a button (no WebGL, no tour, so no pulse), the eye
+glow flaring on each beat, stopped while touring and under reduced motion.
+
+**Decisions** (user, 2026-11-12):
+- **Rhythm:** a heartbeat: a double beat ("lub-dub") every 2.4 s, then a rest.
+- **What pulses:** the head swells about 3% and a soft gold aura flares around its outline (following the cut-out's
+  shape), with the eye flaring too.
+- **Hover or keyboard focus:** the pulse stops while the pointer is on the head or it has focus.
 
 ## Solar system: a livelier sky, and exploring it
 

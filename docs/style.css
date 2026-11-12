@@ -141,6 +141,8 @@ body {
   display: block;
   width: 100%;
   height: 100%;
+  /* Browsers draw the alt text in this colour until the image arrives; hide it (screen readers still read it). */
+  color: transparent;
   /* The image has a transparent background, but the photo crops the gargoyle at its right
      and bottom edges; fade those into space. */
   -webkit-mask-image:

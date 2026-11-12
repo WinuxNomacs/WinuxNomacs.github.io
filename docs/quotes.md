@@ -8,3 +8,8 @@
 - Strong opinions, loosely held and data driven
 - Truth only hurts those who can't accept it
 - If it's not demonstrable, it's not science
+- I used to be an adventurer like you. Then I took an arrow in the knee
+- I am your father's brother's nephew's cousin's former roommate
+- There is no spoon
+- On this ship, you're to refer to me as "idiot", not "you captain"
+- What happens in Vegas, stays in Vegas....except herpes

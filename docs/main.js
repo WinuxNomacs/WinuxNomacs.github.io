@@ -489,12 +489,21 @@
     return { name, el };
   });
 
+  const KM_PER_AU = 149597870.7, KM_PER_MILE = 1.609344;
   let sunText = '', earthText = '';
+  // Call after buildSolar(date): the Earth's distance from the Sun comes from its position (in AU).
   function setDateTexts(date) {
     const day = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    const km = Math.hypot(...solar.bodies[3].pos) * KM_PER_AU;
+    const millions = (n) => (n / 1e6).toFixed(1) + ' million';
+    const miles = `${millions(km / KM_PER_MILE)} miles`, rest = `(${millions(km)} km) from the Sun`;
+    const distance = `${miles} ${rest}`;
     sunText = 'The Sun, about 26,700 light-years from the centre of the Milky Way.';
-    earthText = `You are here: the Earth, with the Sun and the planets where they are on ${day}.`;
+    earthText = `You are here: the Earth, ${distance}, with the Sun and the planets where they are on ${day}.`;
     document.getElementById('earth-date').textContent = `The Earth, ${day}`;
+    // Two parts, so phones can put them on two lines.
+    const parts = [miles, rest].map((text) => Object.assign(document.createElement('span'), { textContent: text }));
+    document.getElementById('earth-distance').replaceChildren(parts[0], ' ', parts[1]);
     note.textContent = `The planets where they are on ${day}. Distances to scale; planets drawn larger.`;
   }
 

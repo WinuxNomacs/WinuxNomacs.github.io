@@ -2,8 +2,7 @@
 
 ## Phases (current and upcoming)
 
-- **Up next:** 1. Explore the solar system: zoom out and in, and click the Sun and planets for their distances
-- **Later:** 2. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
+- **Later:** 1. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
 
 ## Solar system: a livelier sky, and exploring it
 
@@ -26,7 +25,7 @@
 **Conflict:** during the tour, a click anywhere goes back to the landing page, so clicking a planet would leave the
 solar system. That behaviour has to change at this stage (see the decisions).
 
-**Proposed phases** (phase 1, the livelier sky, is done, see below):
+**Proposed phases** (both done, see below):
 1. **A livelier sky:** the real night sky behind the solar system (catalogue stars and a faint Milky Way band), a
    few stars twinkling gently at random; now and then a faint comet with a glowing tail streaks across the background, behind the
    planets. Under reduced motion: stars stay still, no comets.
@@ -86,6 +85,24 @@ with a pointer on the Earth that says "You are here". Use real data where it exi
 - **Planet positions:** live, for the visitor's date.
 
 ## Done
+
+### Solar system: exploring it (2026-11-12)
+
+**Built** in `docs/main.js` (the tour section: `zoom`, `setZoom`, `select`, `placeBodyMarker`, the wheel, pinch,
+key and click handlers), `docs/index.html` (`#body-marker`, `#zoom`) and `docs/style.css`. Once the tour reaches
+the Earth, the wheel (or a trackpad pinch), a two-finger pinch, the "+"/"−" buttons (bottom right) or the +/− keys
+zoom along the tour's own path, from the Earth out to the whole system; the tour's zoom is scaled by the visitor's,
+so going back starts from wherever they are. The planet names are now buttons (`aria-pressed`, hidden ones can't be
+reached). Picking a body (its name, or a click within 24px of its dot) rings it and shows its name and distance,
+which the status line also reads out: the Sun "26,700 light-years from the centre of the Milky Way", a planet "X
+million (or billion) miles (Y km) from the Sun". Picking it again or picking the Earth lets go. While another body
+is picked, the Earth's label shrinks to "You are here", and the picked one's label moves to the other side of its
+ring when it would cover it. In the solar system only "← Back" and Esc go back; before the dive, a click anywhere
+still does.
+**Checked** in headless Chromium (scratch `explore.js`): picking by name and by dot, an empty click doing nothing,
+zooming out by wheel to the limits (buttons dimmed), Neptune's distance, "+" keys, Esc and a click during the
+flight going back, the Tab order (visible names, then the zoom buttons); a 390 px phone with reduced motion: taps on
+"−" and a name, labels flipped clear of each other, no overflow; no console errors.
 
 ### Solar system: a livelier sky (2026-11-12)
 

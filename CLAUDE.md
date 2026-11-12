@@ -30,7 +30,10 @@ A static GitHub Pages site (<https://winuxnomacs.github.io/>): one page, plain H
   (`SOLAR_VIEW`). The way back always takes `FLY` seconds. The galaxy shader's `uView` is the camera's orientation
   (identity on the landing page) and `uStarCap` keeps nearby stars small. `body.touring` fades the head and the
   quote and lifts the banner by `--lift`; `#back`, `#sun-marker`, `#earth-marker`, `#planet-labels`, `#tour-note`
-  and the `#tour-status` live region are in `index.html`. Playwright clicks on the head need `force: true`, because
+  and the `#tour-status` live region are in `index.html`. At the Earth the visitor can zoom (`zoom.z`, which scales the tour's
+  own zoom, via wheel, pinch, `#zoom` buttons or keys) and pick a body (`select()`, `#body-marker`; the names in
+  `#planet-labels` are buttons). In the solar system only "← Back" and Esc go back; a click anywhere does so only
+  before the dive. Playwright clicks on the head need `force: true`, because
   the head never stops drifting; a full tour takes about 17 s in headless Chromium.
 - **Solar system:** `main.js` (the solar system section) has its own small WebGL program (`solarProg`, dots and
   `LINE_LOOP` orbits) and places the planets for the visitor's date from `PLANETS`, NASA JPL's "Approximate

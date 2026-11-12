@@ -33,7 +33,15 @@
     <span class="marker-ring"></span>
     <span class="marker-label">The Sun<small>26,700 light-years from the centre</small></span>
   </div>
-  <div class="planet-labels" id="planet-labels" aria-hidden="true"></div>
+  <div class="planet-labels" id="planet-labels"></div>
+  <div class="marker marker--body" id="body-marker" aria-hidden="true">
+    <span class="marker-ring"></span>
+    <span class="marker-label"><span id="body-name"></span><small id="body-distance"></small></span>
+  </div>
+  <div class="zoom" id="zoom" role="group" aria-label="Zoom">
+    <button type="button" id="zoom-in" aria-label="Zoom in">+</button>
+    <button type="button" id="zoom-out" aria-label="Zoom out">−</button>
+  </div>
   <div class="marker marker--earth" id="earth-marker" aria-hidden="true">
     <span class="marker-ring"></span>
     <span class="marker-label">You are here<small id="earth-date">The Earth</small><small id="earth-distance"></small></span>

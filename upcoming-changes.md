@@ -17,7 +17,7 @@ starts the tour.
 glow flaring on each beat, stopped while touring and under reduced motion.
 
 **Decisions** (user, 2026-11-12):
-- **Rhythm:** a heartbeat: a double beat ("lub-dub") every 2.4 s, then a rest.
+- **Rhythm:** a heartbeat: a double beat ("lub-dub") every 2.4 s, then a rest; later slowed to 2.9 s (user, 2026-11-12).
 - **What pulses:** the head swells about 3% and a soft gold aura flares around its outline (following the cut-out's
   shape), with the eye flaring too.
 - **Hover or keyboard focus:** the pulse stops while the pointer is on the head or it has focus.
@@ -107,7 +107,7 @@ with a pointer on the Earth that says "You are here". Use real data where it exi
 ### The head pulses to invite a click (2026-11-12)
 
 **Built** in `docs/style.css` (`heartbeat`, `aura`, `eye-beat` and `.tilt::before`): while the head is a button, it
-beats "lub-dub" every 2.4 s: it swells 3% (the `scale` property, so it adds to the tilt), a gold aura flares round
+beats "lub-dub" every 2.9 s (first 2.4 s, slowed on request to feel more relaxed): it swells 3% (the `scale` property, so it adds to the tilt), a gold aura flares round
 the cut-out's outline (a blackened copy of the image with a gold drop-shadow, 6% larger up and left so the horns'
 glow isn't clipped, faded at the cropped right and bottom edges), and the eye flares. Hover or focus stops it (the
 eye goes back to its slow pulse); so do the tour and reduced motion.

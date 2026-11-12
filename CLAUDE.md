@@ -47,7 +47,7 @@ A static GitHub Pages site (<https://winuxnomacs.github.io/>): one page, plain H
   equatorial turned onto the ecliptic (`fromEquatorial`), so they match the planets. Sky point sizes are px, or
   radians when negative (the band's glow). `tools/` is not served.
 - **Head pulse:** once the head is a button it beats (`heartbeat` on `.tilt`'s `scale`, `aura` on `.tilt::before`,
-  `eye-beat` on the eye glow, 2.4 s), stopping on hover, focus and touring. The aura is a blackened copy of
+  `eye-beat` on the eye glow, 2.9 s), stopping on hover, focus and touring. The aura is a blackened copy of
   `gargoyle-cutout-707.webp` with a gold drop-shadow; if the image changes, update its URL and edge fade there.
 - **Eye glow position:** the glow is placed at the lit eye, which sits at 53.0% / 32.8% of the image.
   If the image changes, measure the eye again.

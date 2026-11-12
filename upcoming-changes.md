@@ -17,7 +17,11 @@ starts the tour.
 **Proposed phase:** a rhythmic pulse on the head only while it is a button (no WebGL, no tour, so no pulse), the eye
 glow flaring on each beat, stopped while touring and under reduced motion.
 
-**Open decisions:** the rhythm, what pulses, and what happens on hover (asked 2026-11-12).
+**Decisions** (user, 2026-11-12):
+- **Rhythm:** a heartbeat: a double beat ("lub-dub") every 2.4 s, then a rest.
+- **What pulses:** the head swells about 3% and a soft gold aura flares around its outline (following the cut-out's
+  shape), with the eye flaring too.
+- **Hover or keyboard focus:** the pulse stops while the pointer is on the head or it has focus.
 
 ## Solar system: a livelier sky, and exploring it
 

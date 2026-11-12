@@ -46,7 +46,7 @@ body {
 
 .line {
   margin: 0;
-  font-weight: 300;
+  font-weight: 500;
   letter-spacing: 0.04em;
   opacity: 0.75;
   /* Keeps the faint text readable where it crosses the galaxy. */
@@ -54,27 +54,63 @@ body {
 }
 
 .line--top {
-  font-size: clamp(1.1rem, 3.2vmin, 1.8rem);
+  font-size: clamp(1.21rem, 3.52vmin, 1.98rem);
 }
 
-/* Quotes float up into view, wait, then float on up and away (timing in quotes.js). */
+/* The banner links to GitHub but still reads as a title: no underline, a slight brighten on hover. */
+.banner-link {
+  color: inherit;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: color 0.3s ease;
+}
+
+.banner-link:hover,
+.banner-link:focus-visible {
+  color: #d4d4e0;
+}
+
+.banner-link:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 6px;
+}
+
+/* Quotes type in letter by letter, wait, then float up and away (timing in quotes.js). */
 .quote {
   /* Room for two lines, so the head doesn't move when a quote wraps or the slot is empty. */
   min-height: 2.8em;
   max-width: min(36rem, 100%);
-  font-size: clamp(0.95rem, 2.5vmin, 1.2rem);
+  font-size: clamp(1.045rem, 2.75vmin, 1.32rem);
   font-style: italic;
   line-height: 1.4;
-  opacity: 0;
-  transform: translateY(1.5rem);
-  filter: blur(6px);
+  opacity: 0.85;
   transition: opacity 1.6s ease, transform 1.6s ease, filter 1.6s ease;
 }
 
-.quote.is-in {
-  opacity: 0.85;
-  transform: translateY(0);
-  filter: blur(0);
+/* Each letter fades in quickly, one after another (--i is its position; 30ms matches CHAR_MS). */
+.quote .ch {
+  opacity: 0;
+  animation: type-in 0.25s ease forwards;
+  animation-delay: calc(var(--i) * 30ms);
+}
+
+@keyframes type-in {
+  to { opacity: 1; }
+}
+
+/* Words never break across lines between letters. */
+.quote .word {
+  white-space: nowrap;
+}
+
+/* The whole quote for screen readers, which skip the letter-by-letter copy. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .quote.is-out {
@@ -146,5 +182,5 @@ body {
   .float, .eye-glow { animation: none; }
   .eye-glow { opacity: 0.5; }
   .tilt { transform: none; }
-  .quote, .quote.is-in, .quote.is-out { transform: none; filter: none; }
+  .quote, .quote.is-out { transform: none; filter: none; }
 }

@@ -2,11 +2,13 @@
 
 ## Phases (current and upcoming)
 
-- **Up next:** 1. Banner link, larger and bolder text, quotes typed in
+- **Up next:** nothing planned
 - **Then:** nothing planned
 - **Later:** nothing planned
 
-## 1. Banner link, larger and bolder text, quotes typed in
+## Done
+
+### Banner link, larger and bolder text, quotes typed in
 
 **Requests** (from `new.md`, 2026-11-12):
 - Clicking the "Winux Nomacs" banner opens <https://github.com/winuxnomacs>.
@@ -41,7 +43,13 @@ and the quote float in `docs/style.css`, and the quote cycle in `docs/quotes.js`
   fades away as it does now.
 - **Cursor:** none. The letters just fade in left to right.
 
-## Done
+**Built:** the banner link is in `docs/index.html`, the styles in `docs/style.css` (`.banner-link`, `.line`,
+`.quote .ch`, `.sr-only`), and the typing in `type()` in `docs/quotes.js`. It was checked in headless Chromium: the
+href and the click, the hover colour, the computed sizes (exactly 1.1×) and weight 500, three fast-forwarded rounds
+(each quote once per round; 10 s hold after typing, 1.6 s exit, 3 s gap), the screen-reader copy, and screenshots
+on desktop and phone mid-typing and fully typed.
+
+### Earlier
 
 - **Animated single-page site:** plain HTML/CSS/JS in `docs/`, served from `main` `/docs`. MkDocs and its
   workflow were removed.

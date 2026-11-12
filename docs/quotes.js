@@ -1,10 +1,11 @@
-// Floats the quotes from quotes.md in under the head, one at a time, in random order.
+// Types the quotes from quotes.md in under the head, one at a time, in random order.
 // Each round shows every quote once before any repeats; then a new shuffled round starts.
 (() => {
   const el = document.getElementById('quote');
-  const ENTER = 1600;  // ms to float in (matches the CSS transition)
-  const HOLD = 10000;  // ms fully on screen
-  const EXIT = 1600;   // ms to float away
+  const CHAR_MS = 30;  // ms between letters starting to appear (matches the CSS animation-delay)
+  const FADE_MS = 250; // ms each letter takes to fade in (matches the CSS animation)
+  const HOLD = 10000;  // ms fully on screen, counted from the last letter
+  const EXIT = 1600;   // ms to float away (matches the CSS transition)
   const GAP = 3000;    // ms of empty space before the next quote
 
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -25,6 +26,32 @@
     return list;
   };
 
+  // Fills the slot with one span per letter, grouped by word, plus a plain copy for screen readers.
+  // Returns how long the typing takes in ms.
+  function type(quote) {
+    const spoken = document.createElement('span');
+    spoken.className = 'sr-only';
+    spoken.textContent = quote;
+    const shown = document.createElement('span');
+    shown.setAttribute('aria-hidden', 'true');
+    let i = 0;
+    quote.split(' ').forEach((word, w) => {
+      if (w > 0) { shown.append(' '); i++; }
+      const span = document.createElement('span');
+      span.className = 'word';
+      for (const ch of word) {
+        const letter = document.createElement('span');
+        letter.className = 'ch';
+        letter.style.setProperty('--i', i++);
+        letter.textContent = ch;
+        span.append(letter);
+      }
+      shown.append(span);
+    });
+    el.replaceChildren(spoken, shown);
+    return Math.max(0, i - 1) * CHAR_MS + FADE_MS;
+  }
+
   async function run() {
     let quotes;
     try {
@@ -44,11 +71,11 @@
         [round[0], round[round.length - 1]] = [round[round.length - 1], round[0]];
       }
       for (const quote of round) {
-        el.textContent = quote;
-        el.className = 'line quote is-in';
-        await wait(ENTER + HOLD);
+        el.className = 'line quote';
+        await wait(type(quote) + HOLD);
         el.className = 'line quote is-out';
         await wait(EXIT);
+        el.replaceChildren();
         el.className = 'line quote';
         await wait(GAP);
         last = quote;

@@ -2,9 +2,47 @@
 
 ## Phases (current and upcoming)
 
-- **Up next:** nothing planned
-- **Then:** nothing planned
-- **Later:** nothing planned
+- **Up next:** 1. Match the real Milky Way
+- **Then:** 2. Click the head to fly to the Sun; 3. Solar system with "You are here"
+- **Later:** 4. Nearest real stars between the galaxy and the solar system (optional)
+
+## Tour: from the galaxy to "You are here"
+
+**Request** (user, 2026-11-12): clicking the gargoyle fades it away, and the Milky Way zooms into our solar system
+with a pointer on the Earth that says "You are here". Use real data where it exists.
+
+**Builds on:** the WebGL galaxy in `docs/main.js` (already 2 major and 2 minor arms with a bar), the head in
+`docs/index.html`, the banner and the quote slot.
+
+**What real data exists:**
+- No true 3D map of the whole Milky Way exists (we are inside it, and dust hides the far side), but its layout
+  is well measured: a barred spiral about 100,000 light-years across; major arms Perseus and Scutum–Centaurus,
+  minor arms Sagittarius and Norma; a bar about 27° from the Sun–centre line; the Sun about 26,700 light-years
+  (8.2 kpc) from the centre, in the Orion Spur between the Sagittarius and Perseus arms.
+- Planet positions: NASA JPL "Approximate Positions of the Planets" (Keplerian elements, good for 1800–2050).
+- The galaxy and the solar system differ in size by about 10^8, so the zoom is staged with crossfades
+  (galaxy → the Sun's spot → solar system), not one continuous zoom. Planets are drawn larger than true scale,
+  and labelled so.
+
+**Phases:**
+1. **Match the real Milky Way:** tune the generated galaxy's arms and bar to the measured layout, make the arms
+   trail as the real ones do, add the Orion Spur, and fix the Sun's real position (used by phase 2, where it gets
+   its marker). The landing page looks nearly the same.
+2. **Click the head to fly to the Sun:** clicking (or Enter on) the head fades it and the quotes out; the banner
+   moves up to the top edge. The camera flies through the galaxy to the Sun's spot, where a marker appears.
+   A "← Back" button, a click anywhere or Esc flies back and brings the head and quotes back. Under reduced
+   motion each step cuts instead of flying.
+3. **Solar system with "You are here":** crossfade into the Sun, the orbits and the 8 planets at their real
+   positions for the visitor's date, then ease in towards the Earth, with a "You are here" label pointing at it.
+4. **Later, optional:** an in-between stage with the ~100 nearest real stars (HYG catalogue, CC BY-SA 4.0).
+
+**Decisions** (user, 2026-11-12):
+- **Planet style:** glowing dots with thin orbit rings, in plain WebGL. No libraries; the site stays
+  dependency-free.
+- **Getting back:** both a visible "← Back" button and a click anywhere / Esc.
+- **Banner and quotes during the tour:** the quotes are hidden; the banner stays but moves up to the top edge,
+  out of the way.
+- **Planet positions:** live, for the visitor's date.
 
 ## Done
 

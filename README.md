@@ -17,7 +17,8 @@ the centre, where a marker appears. Then it dives into the Sun, and the solar sy
 planets and their orbits, with each planet where it really is on the visitor's date (worked out in the browser from
 NASA JPL's Keplerian elements). Behind them is the real night sky: the stars of the Yale Bright Star Catalogue
 that can be seen with the naked eye, in their true places, brightness and colours, and a faint Milky Way band. A
-few stars twinkle now and then, and every so often a comet streaks past. The camera eases in towards the Earth, marked "You are here", with the date and how far the Earth is from the Sun that day, in miles and kilometres. Distances are to
+few stars twinkle now and then, and every so often a comet streaks past. The note at the bottom credits the
+catalogue, with a link to it. The camera eases in towards the Earth, marked "You are here", with the date and how far the Earth is from the Sun that day, in miles and kilometres. Distances are to
 scale; the planets are drawn larger.
 
 At the Earth, the camera slowly circles (about one turn in four minutes) round the point it looks at: the Sun when

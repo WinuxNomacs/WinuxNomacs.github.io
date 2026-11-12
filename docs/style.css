@@ -687,6 +687,26 @@ body {
   opacity: 0.6;
 }
 
+/* The star catalogue's credit, on its own line; its link is the one part of the note that takes clicks. */
+.tour-credit {
+  display: block;
+}
+
+.tour-credit a {
+  color: inherit;
+  text-underline-offset: 2px;
+  pointer-events: auto;
+}
+
+.tour-credit a:hover,
+.tour-credit a:focus-visible {
+  color: #d4d4e0;
+}
+
+.tour-note:not(.is-shown) .tour-credit a {
+  visibility: hidden;
+}
+
 /* Narrow screens: a marker's label goes under the ring, so it never runs off the right edge. */
 @media (max-width: 600px) {
   .marker-label {
@@ -697,6 +717,9 @@ body {
   }
 
   #earth-distance span, #body-distance span { display: block; }
+
+  /* Clear of the note, which takes four lines here. */
+  .zoom { bottom: 6em; }
 
   .marker--body.is-sun .marker-label { top: 32px; }
 

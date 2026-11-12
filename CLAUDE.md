@@ -32,7 +32,8 @@ A static GitHub Pages site (<https://winuxnomacs.github.io/>): one page, plain H
   quote and lifts the banner by `--lift`; `#back`, `#sun-marker`, `#earth-marker`, `#planet-labels`, `#tour-note`
   and the `#tour-status` live region are in `index.html`. At the Earth the visitor can zoom (`zoom.z`, which scales the tour's
   own zoom, via wheel, pinch, `#zoom` buttons or keys) and pick a body (`select()`, `#body-marker`; the names in
-  `#planet-labels` are buttons). In the solar system only "← Back" and Esc go back; a click anywhere does so only
+  `#planet-labels` are buttons). The camera circles slowly (`orbit`, `ORBIT_SPEED`, the `turn` of
+  `solarCamera`), and `fitLabel()` keeps the markers' labels on screen as it does. In the solar system only "← Back" and Esc go back; a click anywhere does so only
   before the dive. Playwright clicks on the head need `force: true`, because
   the head never stops drifting; a full tour takes about 17 s in headless Chromium.
 - **Solar system:** `main.js` (the solar system section) has its own small WebGL program (`solarProg`, dots and

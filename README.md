@@ -19,7 +19,8 @@ that can be seen with the naked eye, in their true places, brightness and colour
 few stars twinkle now and then, and every so often a comet streaks past. The camera eases in towards the Earth, marked "You are here", with the date and how far the Earth is from the Sun that day, in miles and kilometres. Distances are to
 scale; the planets are drawn larger.
 
-At the Earth, visitors can explore: the mouse wheel, a pinch or the "+"/"−" buttons zoom out to the whole solar
+At the Earth, the camera slowly circles (about one turn in four minutes) round the point it looks at: the Sun when
+zoomed out, a point between the Sun and the Earth when close, so the Earth stays in view. Visitors can explore: the mouse wheel, a pinch or the "+"/"−" buttons zoom out to the whole solar
 system, past Neptune, and back in. Clicking or tapping the Sun or a planet, or its name, rings it and shows its
 distance: the Sun's from the centre of the Milky Way, a planet's from the Sun on that day. The names are buttons, so
 the keyboard reaches them too, and "+"/"−" keys zoom.

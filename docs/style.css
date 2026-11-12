@@ -1,0 +1,126 @@
+:root {
+  --bg: #000;
+  --text: #8a8a94;
+  --glow: 255, 214, 120;
+  --size: min(70vmin, 707px);
+  --rx: 0deg;
+  --ry: 0deg;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-weight: 300;
+}
+
+#ambient {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.stage {
+  position: relative;
+  z-index: 1;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.75rem, 3vmin, 2rem);
+  padding: 16px;
+  text-align: center;
+}
+
+.line {
+  margin: 0;
+  font-weight: 300;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+}
+
+.line--top {
+  font-size: clamp(1.1rem, 3.2vmin, 1.8rem);
+}
+
+.line--bottom {
+  font-size: clamp(0.85rem, 2.2vmin, 1.1rem);
+  opacity: 0.55;
+}
+
+/* Slow drift; the tilt lives on an inner element so the two transforms don't fight. */
+.float {
+  animation: drift 7s ease-in-out infinite;
+}
+
+@keyframes drift {
+  0%, 100% { transform: translateY(-12px) rotate(-0.8deg); }
+  50%      { transform: translateY(12px)  rotate(0.8deg); }
+}
+
+.tilt {
+  position: relative;
+  width: var(--size);
+  aspect-ratio: 1;
+  transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry));
+  will-change: transform;
+}
+
+.gargoyle {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* The photo crops the gargoyle at its right and bottom edges; fade those into the page. */
+  -webkit-mask-image:
+    linear-gradient(to right, #000 62%, transparent 97%),
+    linear-gradient(to bottom, #000 66%, transparent 98%);
+  -webkit-mask-composite: source-in;
+          mask-image:
+    linear-gradient(to right, #000 62%, transparent 97%),
+    linear-gradient(to bottom, #000 66%, transparent 98%);
+          mask-composite: intersect;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Placed on the lit eye (measured at 53.2% / 32.7% of the image). */
+.eye-glow {
+  position: absolute;
+  left: 53.2%;
+  top: 32.7%;
+  width: 26%;
+  aspect-ratio: 1.6;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(closest-side,
+    rgba(var(--glow), 0.85),
+    rgba(var(--glow), 0.35) 40%,
+    rgba(var(--glow), 0) 100%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  animation: pulse 3.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.15; transform: translate(-50%, -50%) scale(0.85); }
+  50%      { opacity: 0.9;  transform: translate(-50%, -50%) scale(1.1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .float, .eye-glow { animation: none; }
+  .eye-glow { opacity: 0.5; }
+  .tilt { transform: none; }
+  #ambient { display: none; }
+}

@@ -2,9 +2,8 @@
 
 ## Phases (current and upcoming)
 
-- **Up next:** 1. Click the head to fly to the Sun (tour phase 2)
-- **Then:** 2. Solar system with "You are here" (tour phase 3)
-- **Later:** 3. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
+- **Up next:** 1. Solar system with "You are here" (tour phase 3)
+- **Later:** 2. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
 
 ## Tour: from the galaxy to "You are here"
 
@@ -24,7 +23,7 @@ with a pointer on the Earth that says "You are here". Use real data where it exi
   (galaxy → the Sun's spot → solar system), not one continuous zoom. Planets are drawn larger than true scale,
   and labelled so.
 
-**Phases** (phase 1 is done, see below):
+**Phases** (phases 1 and 2 are done, see below):
 1. **Match the real Milky Way:** tune the generated galaxy's arms and bar to the measured layout, make the arms
    trail as the real ones do, add the Orion Spur, and fix the Sun's real position (used by phase 2, where it gets
    its marker). The landing page looks nearly the same.
@@ -45,6 +44,21 @@ with a pointer on the Earth that says "You are here". Use real data where it exi
 - **Planet positions:** live, for the visitor's date.
 
 ## Done
+
+### Tour phase 2: click the head to fly to the Sun
+
+**Built** in `docs/main.js` (the tour section, and `uView` / `uStarCap` in the shader), `docs/index.html` (`#head`,
+`#back`, `#sun-marker`, `#tour-status`) and `docs/style.css` (the tour block). The head becomes a button only when
+WebGL works. Clicking it or pressing Enter fades the head and quote, lifts the banner to 12px below the top edge,
+moves the focus to "← Back" and flies the camera for 6 s, keeping the Sun's spot steady as the galaxy turns. It ends
+outside and above the Sun's orbit, with the Sun low on the right and the bulge, bar and arms beyond it. Then the
+marker ("The Sun, 26,700 light-years from the centre") fades in, and screen readers hear the same in a status line.
+"← Back", a click anywhere (except the banner link) or Esc flies back, even mid-flight, and the focus returns to the
+head. Under reduced motion each step cuts. Phones put the marker's label under the ring.
+**Checked** in headless Chromium (scratch `tour-check.js`, `view-try.js`): flying out and back by mouse, Enter, Esc,
+a click anywhere and "← Back"; marker position, status text, focus and banner position; phone size with no
+overflow; reduced motion cuts; no console errors. The landing page is unchanged (same frame rate as `main` within
+SwiftShader's noise, galaxy still under reduced motion).
 
 ### Tour phase 1: match the real Milky Way
 

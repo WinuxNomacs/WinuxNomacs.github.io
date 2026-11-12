@@ -171,10 +171,12 @@
     attribute vec2 aSizeSpin;
     uniform float uAngle;
     uniform vec2 uTiltRoll;
-    uniform vec3 uCam;
+    uniform vec3 uCam;    // camera position
+    uniform mat3 uView;   // camera orientation (identity on the landing page: looking down -z)
     uniform vec2 uProj;   // focal length / aspect, focal length
     uniform float uPx;    // point size scale, includes device pixel ratio
     uniform float uGain;  // overall brightness
+    uniform float uStarCap; // largest a star may be drawn, in pixels
     varying vec3 vColor;
     void main() {
       float a = uAngle * aSizeSpin.y;
@@ -183,12 +185,13 @@
       p = vec3(p.x, p.y * ct - p.z * st, p.y * st + p.z * ct);
       float cr = cos(uTiltRoll.y), sr = sin(uTiltRoll.y);
       p = vec3(p.x * cr - p.y * sr, p.x * sr + p.y * cr, p.z);
-      vec3 v = p - uCam;                 // camera looks down -z
+      vec3 v = uView * (p - uCam);       // camera looks down its own -z
       gl_Position = vec4(v.x * uProj.x, v.y * uProj.y, 0.0, -v.z);
       float size = aSizeSpin.x * uPx / max(-v.z, 0.1);
       // Points smaller than ~1.5px get dimmer instead of smaller, so they don't flicker.
       float shown = max(size, 1.5);
-      gl_PointSize = min(shown, 160.0);
+      // Stars stay small however close the camera flies; only the big soft core glow may grow.
+      gl_PointSize = min(shown, aSizeSpin.x > 20.0 ? 160.0 : uStarCap);
       vColor = aColor * uGain * min(1.0, (size * size) / (shown * shown));
     }`;
   const FRAG = `
@@ -227,41 +230,183 @@
   attr('aSizeSpin', 2, 6);
 
   const u = (name) => gl.getUniformLocation(prog, name);
-  const uAngle = u('uAngle'), uTiltRoll = u('uTiltRoll'), uCam = u('uCam'), uProj = u('uProj'), uPx = u('uPx');
+  const uAngle = u('uAngle'), uTiltRoll = u('uTiltRoll'), uCam = u('uCam'), uView = u('uView');
+  const uProj = u('uProj'), uPx = u('uPx'), uGain = u('uGain'), uStarCap = u('uStarCap');
   gl.uniform2f(uTiltRoll, TILT, ROLL);
-  gl.uniform1f(u('uGain'), 1.7);
 
   gl.disable(gl.DEPTH_TEST);
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.ONE, gl.ONE); // additive: overlapping stars add up to glow
   gl.clearColor(0, 0, 0, 1);
 
+  let proj = { fx: 1, fy: 1 };
   function resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = innerWidth, h = innerHeight, aspect = w / h;
+    gl.uniform1f(uStarCap, 7 * dpr);
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(h * dpr);
     gl.viewport(0, 0, canvas.width, canvas.height);
     // Wide screens: the disc spans a little past the edges. Tall screens: zoom in on the centre.
     const f = (DIST / RADIUS) * Math.max(1.1 * aspect, 1.05);
     gl.uniform2f(uProj, f / aspect, f);
+    proj = { fx: f / aspect, fy: f };
     gl.uniform1f(uPx, (f * Math.max(h, w * 0.6) * dpr) / 2 * 0.02);
   }
 
+  // ---------------------------------------------------------------------------
+  // The tour: clicking the head flies the camera through the galaxy to the Sun's place in it.
+  // ---------------------------------------------------------------------------
+  const FLY = 6; // seconds for the flight out (or back)
+  // Where the camera ends up, in the disc's own coordinates: outside the Sun's orbit and above the disc,
+  // looking at a point a little past the Sun towards the centre, so the Sun sits low with the core beyond.
+  const VIEW = { out: 6, ahead: 0.2, up: 5, lead: 0.35 };
+  const head = document.getElementById('head');
+  const quote = document.getElementById('quote');
+  const banner = document.querySelector('.line--top');
+  const back = document.getElementById('back');
+  const marker = document.getElementById('sun-marker');
+  const status = document.getElementById('tour-status');
+  let tourP = 0;    // 0 = landing page, 1 = at the Sun
+  let tourGoal = 0; // where the flight is heading
+
+  // A point in the disc's coordinates, turned with the galaxy and tilted/rolled as the shader does it.
+  function toWorld(x, y, z, angle) {
+    const ca = Math.cos(angle), sa = Math.sin(angle);
+    let px = ca * x - sa * z, py = y, pz = sa * x + ca * z;
+    const ct = Math.cos(TILT), st = Math.sin(TILT);
+    [py, pz] = [py * ct - pz * st, py * st + pz * ct];
+    const cr = Math.cos(ROLL), sr = Math.sin(ROLL);
+    [px, py] = [px * cr - py * sr, px * sr + py * cr];
+    return [px, py, pz];
+  }
+  const lerp3 = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+  const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const norm = (a) => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+  const ease = (p) => p * p * p * (p * (p * 6 - 15) + 10); // starts and ends gently
+
+  // The camera for a tour progress s (0..1): eye position and its right/up/back axes.
+  function camera(s, angle) {
+    const sun = toWorld(Math.cos(SUN.angle) * SUN.r, SUN.y, Math.sin(SUN.angle) * SUN.r, angle);
+    const a = SUN.angle + VIEW.ahead, r = SUN.r + VIEW.out;
+    const end = toWorld(Math.cos(a) * r, VIEW.up, Math.sin(a) * r, angle);
+    const focus = sun.map((v) => v * (1 - VIEW.lead)); // the centre is at the origin
+    const endDir = sub(end, focus), endDist = Math.hypot(...endDir);
+    // Landing page: straight down -z from DIST away, nudged against the pointer for depth.
+    const home = [-current.x * 1.6, current.y * 1.0, 0];
+    const look = lerp3(home, focus, ease(Math.min(1, s * 1.4)));
+    const dist = Math.exp(Math.log(DIST) + (Math.log(endDist) - Math.log(DIST)) * s);
+    const dir = norm(lerp3([0, 0, 1], norm(endDir), s));
+    let eye = look.map((v, i) => v + dir[i] * dist);
+    // At the Sun the pointer still sways the camera a little.
+    eye = [eye[0] - current.x * 0.12 * s, eye[1] + current.y * 0.08 * s, eye[2]];
+    const back3 = norm(sub(eye, look));
+    const upHint = norm(lerp3([0, 1, 0], toWorld(0, 1, 0, 0), s));
+    const right = norm(cross(upHint, back3));
+    const up = cross(back3, right);
+    return { eye, right, up, back: back3, sun };
+  }
+
+  // Lifts the banner to the top edge while touring (offsetTop ignores the lift itself).
+  function measureBanner() {
+    document.body.style.setProperty('--lift', (12 - banner.offsetTop) + 'px');
+  }
+
+  function arrived() {
+    marker.classList.add('is-shown');
+    status.textContent = 'The Sun, about 26,700 light-years from the centre of the Milky Way.';
+  }
+  function landed() {
+    document.body.classList.remove('touring');
+    head.inert = false;
+    quote.inert = false;
+    head.focus({ preventScroll: true });
+  }
+
+  function go() {
+    if (tourGoal === 1) return;
+    measureBanner();
+    tourGoal = 1;
+    document.body.classList.add('touring');
+    head.inert = true;
+    quote.inert = true;
+    back.focus({ preventScroll: true });
+    kick();
+  }
+  function goBack() {
+    if (tourGoal === 0) return;
+    tourGoal = 0;
+    marker.classList.remove('is-shown');
+    status.textContent = '';
+    kick();
+  }
+  // Starts the frame loop if it is idle (under reduced motion each step simply cuts).
+  function kick() {
+    if (reduced) {
+      tourP = tourGoal;
+      draw(0);
+      if (tourP === 1) arrived(); else landed();
+    } else if (!frame && !document.hidden) {
+      frame = requestAnimationFrame(draw);
+    }
+  }
+
+  // The head becomes a button only here, once WebGL is known to work.
+  head.setAttribute('role', 'button');
+  head.tabIndex = 0;
+  head.setAttribute('aria-label', 'Fly to the Sun’s place in the Milky Way');
+  head.addEventListener('click', (e) => { e.stopPropagation(); go(); });
+  head.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
+  });
+  back.addEventListener('click', (e) => { e.stopPropagation(); goBack(); });
+  document.addEventListener('click', (e) => {
+    if (tourGoal === 1 && !e.target.closest('a')) goBack();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') goBack();
+  });
+
   const start = performance.now();
   let frame = null;
+  let last = null;
   function draw(now) {
     const t = reduced ? 40 : (now - start) / 1000;
-    gl.uniform1f(uAngle, t * SPIN);
-    // Camera drifts against the pointer, so the galaxy sits behind the head in depth.
-    gl.uniform3f(uCam, -current.x * 1.6, current.y * 1.0, DIST);
+    const dt = last == null ? 0 : Math.min(0.25, (now - last) / 1000); // slow devices skip ahead
+    last = now;
+    if (!reduced && tourP !== tourGoal) {
+      tourP = tourGoal ? Math.min(1, tourP + dt / FLY) : Math.max(0, tourP - dt / FLY);
+      if (tourP === tourGoal) { if (tourP === 1) arrived(); else landed(); }
+    }
+    const angle = t * SPIN;
+    const s = ease(tourP);
+    const cam = camera(s, angle);
+    gl.uniform1f(uAngle, angle);
+    gl.uniform3f(uCam, cam.eye[0], cam.eye[1], cam.eye[2]);
+    const { right: R, up: U, back: B } = cam;
+    gl.uniformMatrix3fv(uView, false, [R[0], U[0], B[0], R[1], U[1], B[1], R[2], U[2], B[2]]);
+    gl.uniform1f(uGain, 1.7 - 0.5 * s);
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.POINTS, 0, n);
+
+    // Keep the Sun's marker on the Sun.
+    if (tourP > 0) {
+      const v = sub(cam.sun, cam.eye);
+      const vx = dot(v, R), vy = dot(v, U), w = -dot(v, B);
+      if (w > 0) {
+        const x = (vx * proj.fx / w + 1) / 2 * innerWidth;
+        const y = (1 - vy * proj.fy / w) / 2 * innerHeight;
+        marker.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+      }
+    }
     frame = reduced ? null : requestAnimationFrame(draw);
   }
 
   window.addEventListener('resize', () => {
     resize();
+    measureBanner();
     if (reduced) draw(0);
   });
   document.addEventListener('visibilitychange', () => {

@@ -15,7 +15,7 @@
   <main class="stage">
     <h1 class="line line--top"><a class="banner-link" href="https://github.com/winuxnomacs">Winux Nomacs</a></h1>
 
-    <div class="float">
+    <div class="float" id="head">
       <div class="tilt" id="tilt">
         <img class="gargoyle" src="assets/img/gargoyle-cutout-707.webp"
              srcset="assets/img/gargoyle-cutout-707.webp 707w, assets/img/gargoyle-cutout-1414.webp 1414w"
@@ -27,6 +27,13 @@
 
     <p class="line quote" id="quote"></p>
   </main>
+
+  <button class="back line" id="back" type="button">← Back</button>
+  <div class="sun-marker" id="sun-marker" aria-hidden="true">
+    <span class="sun-ring"></span>
+    <span class="sun-label">The Sun<small>26,700 light-years from the centre</small></span>
+  </div>
+  <p class="sr-only" id="tour-status" role="status"></p>
 
   <script src="main.js" defer></script>
   <script src="quotes.js" defer></script>

@@ -24,5 +24,10 @@ A static GitHub Pages site (<https://winuxnomacs.github.io/>): one page, plain H
   look are set by the constants at the top of the galaxy section (`TILT`, `ROLL`, `SPIN`, the point counts) and
   the `uGain` brightness. The arms, the bar and `SUN` follow the measured Milky Way (1 unit = 1.36 kpc; the comments
   give the sources' numbers), so keep them consistent if the layout changes: the tour flies to `SUN`. Headless Chromium renders it in software at about 30 fps, so judge speed on a real GPU.
+- **Tour:** `main.js` (the tour section) makes the head a button once WebGL works, and flies the camera to `SUN`
+  (`FLY` seconds; the final view is `VIEW`, in the disc's coordinates). The shader's `uView` is the camera's
+  orientation (identity on the landing page) and `uStarCap` keeps nearby stars small. `body.touring` fades the head
+  and the quote and lifts the banner by `--lift`; `#back`, `#sun-marker` and the `#tour-status` live region are in
+  `index.html`. Playwright clicks on the head need `force: true`, because the head never stops drifting.
 - **Eye glow position:** the glow is placed at the lit eye, which sits at 53.0% / 32.8% of the image.
   If the image changes, measure the eye again.

@@ -63,7 +63,8 @@ python3 -I tools/make-stars.py catalog.gz docs/stars.bin
 To add, change or remove a quote, edit the list in `docs/quotes.md` and push. The page reads that file when it
 loads. It shows the quotes in random order, each one exactly once before any repeats. A laser beam from the eye prints each quote
 quickly, letter by letter, each letter glowing hot and then cooling to silver. The quote stays for 10 seconds once
-fully printed, then floats up and away. The next one starts 3 seconds later. After the last quote, a new shuffled
+fully printed, then floats up and away. The next one starts 3 seconds later. Clicking or tapping a quote skips it:
+it floats away at once, even mid-print, and the next one follows 3 seconds later. After the last quote, a new shuffled
 round begins, never starting with the quote that was just shown.
 
 ## Preview locally

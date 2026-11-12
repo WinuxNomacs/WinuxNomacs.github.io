@@ -122,6 +122,9 @@ with reduced motion shows the same sky with identical frames; no console errors.
 
 ### Small changes (2026-11-12)
 
+- **Skip a quote:** clicking or tapping the quote makes it float away at once, even mid-print, and the next one
+  follows after the usual 3 s gap (`shown()` and `skip` in `docs/quotes.js`).
+
 - **Slow orbit:** at the Earth the solar system camera circles round the point it looks at, about one turn in four
   minutes, easing in after arrival and out on the way back; none under reduced motion. The Earth's and the picked
   body's labels stay on screen as it turns (`fitLabel()` in `docs/main.js`).

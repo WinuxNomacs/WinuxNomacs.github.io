@@ -133,6 +133,11 @@ body {
   initial-value: 0;
 }
 
+/* While a quote is shown, a click skips to the next one. */
+.quote.is-skippable {
+  cursor: pointer;
+}
+
 .quote {
   --band: 12em;
   animation: quote-gleam 7s ease-in-out infinite;

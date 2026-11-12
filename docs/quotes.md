@@ -1,5 +1,5 @@
 # Quotes
-- Eyes up Guardian
+- Eyes up, Guardian
 - I care not what you think, only that you do
 - When going through hell, keep going
 - The universe is under no obligation to make sense to you ~NDT
@@ -12,4 +12,21 @@
 - I am your father's brother's nephew's cousin's former roommate
 - There is no spoon
 - On this ship, you're to refer to me as "idiot", not "you captain"
-- What happens in Vegas, stays in Vegas....except herpes
+- What happens in Vegas, stays in Vegas... except herpes
+- Goonies never say die
+- How do you know so much about swallows?
+- Who's they? What the hell is an aluminum falcon?
+- Guys like you don't die on toilets
+- I'm too old for this shit
+- And please don't make the super suit green. Or animated!
+- I did not lie, I made an educated wish
+- Maximum effort
+- Autobots, roll out!
+- What can be asserted without evidence can also be dismissed without evidence
+- Never attribute to malice that which is adequately explained by stupidity
+- Facts don't need your permission to exist
+- And I would have gotten away with it too, if it weren't for you meddling kids
+- B-dee-b-dee-b-dee-that's all, folks!
+- Roads? Where we're going, we don't need roads.
+- Are you telling me you built a time machine... out of a DeLorean?
+- Why don't you make like a tree, and get outta here.

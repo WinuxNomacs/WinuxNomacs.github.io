@@ -11,7 +11,8 @@ A static GitHub Pages site (<https://winuxnomacs.github.io/>): one page, plain H
 - **Quotes:** `docs/quotes.md` is the list (every `- ` or `* ` line is a quote; other lines are ignored).
   `docs/quotes.js` reads it and shuffles it into rounds with no repeats. It types each quote as one span per
   letter (`.ch`, with `--i` as the letter's position, grouped in no-wrap `.word` spans), plus an `.sr-only` copy for
-  screen readers. `place()` sets each letter's `--x` and the slot's `--qw`, so one band of light (`--sweep`, shared with the banner's shine) can cross all the letters. `laser()` moves a `.laser` print head from letter to letter in step with the typing and aims an `.eye-beam` at it from the eye glow every frame (both skipped under reduced motion; the beam hides while touring), while each letter's `cool` animation fades its glow. Then it adds `is-out` so the quote floats away. Its `CHAR_MS`, `FADE_MS` and `EXIT` constants must
+  screen readers. `place()` sets each letter's `--x` and the slot's `--qw`, so one band of light (`--sweep`, shared with the banner's shine) can cross all the letters. `laser()` moves a `.laser` print head from letter to letter in step with the typing and aims an `.eye-beam` at it from the eye glow every frame (both skipped under reduced motion; the beam hides while touring), while each letter's `cool` animation fades its glow. Then it adds `is-out` so the quote floats away; a click on the quote while it is shown (`is-skippable`) ends
+  that wait early (`skip`) and removes the laser. Its `CHAR_MS`, `FADE_MS` and `EXIT` constants must
   match the `animation-delay`, the animation and the transition in `style.css`.
 - **Motion:** every animation must stop under `prefers-reduced-motion: reduce` (in both `style.css` and
   `main.js`).

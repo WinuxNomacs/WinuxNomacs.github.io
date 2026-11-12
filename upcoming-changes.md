@@ -151,6 +151,10 @@ with reduced motion shows the same sky with identical frames; no console errors.
 
 ### Small changes (2026-11-12)
 
+- **Title rises on hover:** pointing at (or focusing) "Winux Nomacs" makes it grow 15% and lift, with its shadow
+  falling further and spreading, as if it rose off the page (`.banner-link:hover` in `docs/style.css`); it only
+  brightens under reduced motion.
+
 - **Skip a quote:** clicking or tapping the quote makes it float away at once, even mid-print, and the next one
   follows after the usual 3 s gap (`shown()` and `skip` in `docs/quotes.js`).
 

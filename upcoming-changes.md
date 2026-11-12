@@ -122,6 +122,10 @@ with reduced motion shows the same sky with identical frames; no console errors.
 
 ### Small changes (2026-11-12)
 
+- **Slow orbit:** at the Earth the solar system camera circles round the point it looks at, about one turn in four
+  minutes, easing in after arrival and out on the way back; none under reduced motion. The Earth's and the picked
+  body's labels stay on screen as it turns (`fitLabel()` in `docs/main.js`).
+
 - **Custom domain:** the site is served at <https://winuxnomacs.com/> (`docs/CNAME`, added by GitHub).
 - **More quotes**, and the head's alt text no longer shows while the image loads.
 - **Silver text:** the banner and quotes are gleaming silver 3D text with a band of light sweeping across them.

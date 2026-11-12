@@ -567,6 +567,9 @@
   // ZOOM_RANGE is that span in log distance (see solarCamera), so a pinch can follow the fingers.
   const ZOOM_RANGE = Math.log(36 / 1.3);
   const ZOOM_STEP = 0.2; // per "+" or "−"
+  // At the Earth the camera slowly circles (radians per second: one turn in about 4 minutes), easing in and out.
+  const ORBIT_SPEED = 0.026;
+  const orbit = { angle: 0, rate: 0 };
   const zoom = { z: 1, target: 1 };
   let selected = null; // the picked body (index into solar.bodies), or null
   let bodyXY = [];     // where each body is on screen, for picking by click
@@ -638,10 +641,12 @@
     return cam;
   }
 
-  // The solar system camera for zoom progress z (0..1); fading (0..1) pulls it further out while it fades in.
-  function solarCamera(z, fading) {
+  // The solar system camera for zoom progress z (0..1); fading (0..1) pulls it further out while it fades in;
+  // turn (radians) circles it round the point it looks at (the Sun when zoomed out), so zoomed in the Earth stays in view.
+  function solarCamera(z, fading, turn) {
     const earth = solar.bodies[3].pos;
-    const h = norm([earth[0], 0, earth[2]]); // from the Sun out past the Earth
+    const h0 = norm([earth[0], 0, earth[2]]); // from the Sun out past the Earth
+    const h = [h0[0] * Math.cos(turn) - h0[2] * Math.sin(turn), 0, h0[0] * Math.sin(turn) + h0[2] * Math.cos(turn)];
     const el = (SOLAR_VIEW.wideEl + (SOLAR_VIEW.closeEl - SOLAR_VIEW.wideEl) * z) * RAD;
     // Distance at which a radius of 1 AU fills the screen's narrower way.
     const fit = Math.max(proj.fx, proj.fy * Math.sin(el));
@@ -757,6 +762,7 @@
     measureBanner();
     zoom.z = 1;
     setZoom(1);
+    orbit.angle = orbit.rate = 0;
     tourGoal = AT_EARTH;
     document.body.classList.add('touring');
     head.inert = true;
@@ -877,7 +883,11 @@
     if (solarFade > 0 && solar.date) {
       if (!reduced) zoom.z += (zoom.target - zoom.z) * (1 - Math.exp(-dt * 8));
       // The tour's zoom, scaled by the visitor's, so going back starts from wherever they zoomed to.
-      const cam = solarCamera(ease(part(tourT, IN_SYSTEM, ZOOM)) * zoom.z, solarFade);
+      if (!reduced) {
+        orbit.rate += ((exploring() ? ORBIT_SPEED : 0) - orbit.rate) * (1 - Math.exp(-dt * 0.5));
+        orbit.angle += orbit.rate * dt;
+      }
+      const cam = solarCamera(ease(part(tourT, IN_SYSTEM, ZOOM)) * zoom.z, solarFade, orbit.angle);
       const view = viewMatrix(cam);
       drawSky(cam, view, solarFade, t);
       // Orbits, then the Sun and planets on top.
@@ -893,7 +903,7 @@
       gl.uniform1f(sFlat, 0);
       gl.drawArrays(gl.POINTS, 0, bodies);
       bodyXY = solar.bodies.map((b) => project(b.pos, cam));
-      if (bodyXY[3]) place(earthMarker, bodyXY[3]);
+      if (bodyXY[3]) { place(earthMarker, bodyXY[3]); fitLabel(earthMarker, bodyXY[3]); }
       if (selected !== null) placeBodyMarker(bodyXY[selected]);
       placeLabels(cam);
     }
@@ -931,6 +941,20 @@
     }
   }
 
+  // Keeps a marker's label on screen as the camera circles: on wide screens it goes to the left of the ring near
+  // the right edge; on phones, where it is centred under the ring, it slides sideways (--nudge).
+  function fitLabel(marker, xy) {
+    const label = marker.querySelector('.marker-label');
+    if (innerWidth > 600) {
+      marker.classList.toggle('is-left', xy[0] + label.offsetWidth + 50 > innerWidth);
+      return;
+    }
+    marker.style.setProperty('--nudge', '0px');
+    const r = label.getBoundingClientRect();
+    const nudge = Math.max(0, 8 - r.left) - Math.max(0, r.right - (innerWidth - 8));
+    marker.style.setProperty('--nudge', nudge.toFixed(1) + 'px');
+  }
+
   // The picked body's marker; off screen it hides. Its label goes to the left of the ring near the right edge,
   // and to the other side (above the ring on phones) when it would cover "You are here".
   function placeBodyMarker(xy) {
@@ -940,7 +964,7 @@
     place(bodyMarker, xy);
     const label = bodyMarker.querySelector('.marker-label');
     bodyMarker.classList.remove('is-flip');
-    bodyMarker.classList.toggle('is-left', xy[0] + label.offsetWidth + 50 > innerWidth);
+    fitLabel(bodyMarker, xy);
     if (!earthMarker.classList.contains('is-shown')) return;
     const a = label.getBoundingClientRect(), b = earthMarker.querySelector('.marker-label').getBoundingClientRect();
     if (a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top) bodyMarker.classList.add('is-flip');

@@ -498,7 +498,7 @@ body {
 }
 
 @media (min-width: 601px) {
-  .marker--body.is-left .marker-label {
+  .marker.is-left .marker-label {
     left: auto;
     right: 24px;
     text-align: right;
@@ -607,7 +607,7 @@ body {
   .marker-label {
     left: 0;
     top: 22px;
-    transform: translateX(-50%);
+    transform: translateX(calc(-50% + var(--nudge, 0px)));
     text-align: center;
   }
 

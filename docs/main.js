@@ -563,6 +563,13 @@
   // The solar system views: from above the ecliptic at `wide` (whole system) then `close` (round the Earth),
   // degrees of elevation, and how far towards the Earth the close view looks (0 = the Sun, 1 = the Earth).
   const SOLAR_VIEW = { wideEl: 62, closeEl: 34, lead: 0.55 };
+  // Exploring at the Earth: zoom runs from the whole system (0) to the Earth (1) along the tour's path;
+  // ZOOM_RANGE is that span in log distance (see solarCamera), so a pinch can follow the fingers.
+  const ZOOM_RANGE = Math.log(36 / 1.3);
+  const ZOOM_STEP = 0.2; // per "+" or "−"
+  const zoom = { z: 1, target: 1 };
+  let selected = null; // the picked body (index into solar.bodies), or null
+  let bodyXY = [];     // where each body is on screen, for picking by click
   const head = document.getElementById('head');
   const quote = document.getElementById('quote');
   const banner = document.querySelector('.line--top');
@@ -572,6 +579,9 @@
   const labels = document.getElementById('planet-labels');
   const note = document.getElementById('tour-note');
   const status = document.getElementById('tour-status');
+  const bodyMarker = document.getElementById('body-marker');
+  const zoomBox = document.getElementById('zoom');
+  const zoomIn = document.getElementById('zoom-in'), zoomOut = document.getElementById('zoom-out');
   let tourT = 0;    // seconds along the tour: 0 = landing page, AT_EARTH = "You are here"
   let tourGoal = 0; // 0 or AT_EARTH
   let backRate = 1; // the way back always takes FLY seconds, however far the tour got
@@ -650,33 +660,70 @@
     document.body.style.setProperty('--lift', (12 - banner.offsetTop) + 'px');
   }
 
-  // Planet names, made once.
-  const labelEls = PLANETS.map(([name]) => name).concat('Sun').map((name) => {
-    const el = document.createElement('span');
+  // Planet names, made once. Each is a button that picks its body (body: its index in solar.bodies).
+  const labelEls = PLANETS.map(([name]) => name).concat('Sun').map((name, k) => {
+    const el = document.createElement('button');
+    el.type = 'button';
     el.className = 'planet-label';
     el.dataset.name = name;
     el.textContent = name;
+    el.setAttribute('aria-pressed', 'false');
+    const body = name === 'Sun' ? 0 : k + 1;
+    el.addEventListener('click', (e) => { e.stopPropagation(); select(body); });
     labels.appendChild(el);
-    return { name, el };
+    return { name, el, body };
   });
 
   const KM_PER_AU = 149597870.7, KM_PER_MILE = 1.609344;
-  let sunText = '', earthText = '';
-  // Call after buildSolar(date): the Earth's distance from the Sun comes from its position (in AU).
+  let sunText = '', earthText = '', bodyText = '';
+  // A body's distance from the Sun for the day, from its position (in AU): "X million miles", "(Y million km) from
+  // the Sun", in two parts so phones can put them on two lines.
+  function distanceParts(body) {
+    const km = Math.hypot(...solar.bodies[body].pos) * KM_PER_AU;
+    const big = (n) => (n < 1e9 ? (n / 1e6).toFixed(1) + ' million' : (n / 1e9).toFixed(2) + ' billion');
+    return [`${big(km / KM_PER_MILE)} miles`, `(${big(km)} km) from the Sun`];
+  }
+  const spans = (parts) => parts.flatMap((text, i) => [i ? ' ' : '', Object.assign(document.createElement('span'), { textContent: text })]);
+  // Call after buildSolar(date).
   function setDateTexts(date) {
     const day = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-    const km = Math.hypot(...solar.bodies[3].pos) * KM_PER_AU;
-    const millions = (n) => (n / 1e6).toFixed(1) + ' million';
-    const miles = `${millions(km / KM_PER_MILE)} miles`, rest = `(${millions(km)} km) from the Sun`;
-    const distance = `${miles} ${rest}`;
+    const parts = distanceParts(3), distance = parts.join(' ');
     sunText = 'The Sun, about 26,700 light-years from the centre of the Milky Way.';
     earthText = `You are here: the Earth, ${distance}, with the Sun and the planets where they are on ${day}.`;
     document.getElementById('earth-date').textContent = `The Earth, ${day}`;
-    // Two parts, so phones can put them on two lines.
-    const parts = [miles, rest].map((text) => Object.assign(document.createElement('span'), { textContent: text }));
-    document.getElementById('earth-distance').replaceChildren(parts[0], ' ', parts[1]);
-    note.textContent = `The planets where they are on ${day}. Distances to scale; planets drawn larger.`;
+    document.getElementById('earth-distance').replaceChildren(...spans(parts));
+    note.textContent = `The planets where they are on ${day}. Distances to scale; planets drawn larger. ` +
+                       'Pick one, or the Sun, to see its distance.';
   }
+
+  // Picks a body (or picks it again to let go): its marker shows its name and distance. The Earth always has
+  // "You are here", so picking it just lets go of the others.
+  function select(body) {
+    selected = body === null || body === 3 || body === selected ? null : body;
+    if (selected !== null) {
+      const sun = selected === 0;
+      const name = sun ? 'The Sun' : solar.bodies[selected].name;
+      const parts = sun ? ['26,700 light-years from the centre of the Milky Way'] : distanceParts(selected);
+      document.getElementById('body-name').textContent = name;
+      document.getElementById('body-distance').replaceChildren(...spans(parts));
+      bodyMarker.classList.toggle('is-sun', sun);
+      bodyText = sun ? sunText.replace('about ', '') : `${name}, ${parts.join(' ')}.`;
+    }
+    for (const { el, body: b } of labelEls) el.setAttribute('aria-pressed', String(b === selected));
+    redraw();
+  }
+
+  function setZoom(target) {
+    zoom.target = Math.min(1, Math.max(0, target));
+    if (reduced) zoom.z = zoom.target;
+    zoomIn.setAttribute('aria-disabled', String(zoom.target >= 1));
+    zoomOut.setAttribute('aria-disabled', String(zoom.target <= 0));
+    redraw();
+  }
+  // At the Earth, once the tour has arrived: zooming and picking work.
+  const exploring = () => tourGoal > 0 && tourT >= AT_EARTH;
+  // Under reduced motion nothing draws on its own, so changes draw once.
+  const redraw = () => { if (reduced) draw(0); };
 
   // Shows what belongs to the current point of the tour.
   function showStage() {
@@ -684,9 +731,14 @@
     const atEarth = tourT >= AT_EARTH;
     sunMarker.classList.toggle('is-shown', atSun);
     earthMarker.classList.toggle('is-shown', atEarth);
+    earthMarker.classList.toggle('is-compact', selected !== null); // just "You are here" while another is picked
+    bodyMarker.classList.toggle('is-shown', atEarth && selected !== null);
+    zoomBox.classList.toggle('is-shown', exploring());
+    labels.inert = !exploring();
     note.classList.toggle('is-shown', tourGoal > 0 && tourT >= IN_SYSTEM);
-    labelEls[2].el.classList.toggle('is-hidden', atEarth); // "You are here" replaces the Earth's name
-    const text = atEarth ? earthText : atSun ? sunText : '';
+    // "You are here" replaces the Earth's name, and the picked body's marker its own.
+    for (const { el, body } of labelEls) el.classList.toggle('is-hidden', atEarth && (body === 3 || body === selected));
+    const text = atEarth ? (selected !== null ? bodyText : earthText) : atSun ? sunText : '';
     if (status.textContent !== text) status.textContent = text;
   }
 
@@ -703,6 +755,8 @@
     buildSolar(now);
     setDateTexts(now);
     measureBanner();
+    zoom.z = 1;
+    setZoom(1);
     tourGoal = AT_EARTH;
     document.body.classList.add('touring');
     head.inert = true;
@@ -713,6 +767,7 @@
   function goBack() {
     if (!tourGoal) return;
     tourGoal = 0;
+    select(null);
     backRate = Math.max(1, tourT / FLY);
     kick();
   }
@@ -741,11 +796,49 @@
   });
   back.addEventListener('click', (e) => { e.stopPropagation(); goBack(); });
   document.addEventListener('click', (e) => {
-    if (tourGoal && !e.target.closest('a')) goBack();
+    if (!tourGoal || e.target.closest('a, button')) return;
+    // Out in the galaxy, a click anywhere goes back. In the solar system only "← Back" and Esc do.
+    if (tourT < LEAVE_SUN) { goBack(); return; }
+    if (!exploring()) return;
+    // A click on or near the Sun or a planet picks it; anywhere else does nothing.
+    let best = null, bestGap = 24;
+    bodyXY.forEach((xy, i) => {
+      const gap = xy ? Math.hypot(xy[0] - e.clientX, xy[1] - e.clientY) - (i === 0 ? 10 : 0) : Infinity;
+      if (gap < bestGap) { best = i; bestGap = gap; }
+    });
+    if (best !== null) select(best);
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') goBack();
+    else if (exploring() && (e.key === '+' || e.key === '=')) setZoom(zoom.target + ZOOM_STEP);
+    else if (exploring() && (e.key === '-' || e.key === '_')) setZoom(zoom.target - ZOOM_STEP);
   });
+  zoomIn.addEventListener('click', () => setZoom(zoom.target + ZOOM_STEP));
+  zoomOut.addEventListener('click', () => setZoom(zoom.target - ZOOM_STEP));
+  // The wheel (and a trackpad pinch, which arrives as a wheel with ctrlKey) zooms instead of zooming the page.
+  window.addEventListener('wheel', (e) => {
+    if (!exploring()) return;
+    e.preventDefault();
+    const step = e.deltaMode === 1 ? 0.04 : e.deltaMode === 2 ? 0.5 : 0.0015;
+    setZoom(zoom.target - e.deltaY * step * (e.ctrlKey ? 4 : 1));
+  }, { passive: false });
+  // A two-finger pinch zooms so the view follows the fingers' spread.
+  const touches = new Map();
+  let pinch = null;
+  const spread = () => { const [a, b] = [...touches.values()]; return Math.max(1, Math.hypot(a[0] - b[0], a[1] - b[1])); };
+  window.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'touch') return;
+    touches.set(e.pointerId, [e.clientX, e.clientY]);
+    pinch = touches.size === 2 && exploring() ? { from: spread(), z: zoom.target } : null;
+  });
+  window.addEventListener('pointermove', (e) => {
+    if (!touches.has(e.pointerId)) return;
+    touches.set(e.pointerId, [e.clientX, e.clientY]);
+    if (pinch) setZoom(pinch.z + Math.log(spread() / pinch.from) / ZOOM_RANGE);
+  });
+  const untouch = (e) => { touches.delete(e.pointerId); pinch = null; };
+  window.addEventListener('pointerup', untouch);
+  window.addEventListener('pointercancel', untouch);
 
   const place = (el, xy) => { el.style.transform = `translate(${xy[0].toFixed(1)}px, ${xy[1].toFixed(1)}px)`; };
 
@@ -782,7 +875,9 @@
     }
 
     if (solarFade > 0 && solar.date) {
-      const cam = solarCamera(ease(part(tourT, IN_SYSTEM, ZOOM)), solarFade);
+      if (!reduced) zoom.z += (zoom.target - zoom.z) * (1 - Math.exp(-dt * 8));
+      // The tour's zoom, scaled by the visitor's, so going back starts from wherever they zoomed to.
+      const cam = solarCamera(ease(part(tourT, IN_SYSTEM, ZOOM)) * zoom.z, solarFade);
       const view = viewMatrix(cam);
       drawSky(cam, view, solarFade, t);
       // Orbits, then the Sun and planets on top.
@@ -797,9 +892,10 @@
       for (let i = 0; i < PLANETS.length; i++) gl.drawArrays(gl.LINE_LOOP, bodies + i * ORBIT_STEPS, ORBIT_STEPS);
       gl.uniform1f(sFlat, 0);
       gl.drawArrays(gl.POINTS, 0, bodies);
+      bodyXY = solar.bodies.map((b) => project(b.pos, cam));
+      if (bodyXY[3]) place(earthMarker, bodyXY[3]);
+      if (selected !== null) placeBodyMarker(bodyXY[selected]);
       placeLabels(cam);
-      const xy = project(solar.bodies[3].pos, cam);
-      if (xy) place(earthMarker, xy);
     }
     // Out of the solar system: no comet, and the first one comes a few seconds after arriving again.
     if (solarFade === 0) { sky.comet = null; sky.next = t + 2 + Math.random() * 3; }
@@ -814,7 +910,11 @@
   // body is off screen, close to a body already named, or its text would touch another name or named body
   // (so the inner planets get theirs as the camera comes near).
   function placeLabels(cam) {
-    const dots = [], boxes = [];
+    // The markers' labels come first: names keep clear of them.
+    const dots = [], boxes = [earthMarker, bodyMarker].filter((m) => m.classList.contains('is-shown')).map((m) => {
+      const r = m.querySelector('.marker-label').getBoundingClientRect();
+      return [r.left, r.top, r.right, r.bottom];
+    });
     for (const k of [8, 7, 6, 5, 4, 3, 2, 1, 0]) { // labelEls: the planets from Mercury, then the Sun
       const { el, name } = labelEls[k];
       const xy = project(solar.bodies[name === 'Sun' ? 0 : k + 1].pos, cam);
@@ -829,6 +929,21 @@
       }
       el.classList.toggle('is-off', !clear);
     }
+  }
+
+  // The picked body's marker; off screen it hides. Its label goes to the left of the ring near the right edge,
+  // and to the other side (above the ring on phones) when it would cover "You are here".
+  function placeBodyMarker(xy) {
+    const on = xy && xy[0] > 0 && xy[0] < innerWidth && xy[1] > 0 && xy[1] < innerHeight;
+    bodyMarker.classList.toggle('is-off', !on);
+    if (!on) return;
+    place(bodyMarker, xy);
+    const label = bodyMarker.querySelector('.marker-label');
+    bodyMarker.classList.remove('is-flip');
+    bodyMarker.classList.toggle('is-left', xy[0] + label.offsetWidth + 50 > innerWidth);
+    if (!earthMarker.classList.contains('is-shown')) return;
+    const a = label.getBoundingClientRect(), b = earthMarker.querySelector('.marker-label').getBoundingClientRect();
+    if (a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top) bodyMarker.classList.add('is-flip');
   }
 
   window.addEventListener('resize', () => {

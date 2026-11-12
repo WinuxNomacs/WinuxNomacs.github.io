@@ -17,7 +17,15 @@ planets and their orbits, with each planet where it really is on the visitor's d
 NASA JPL's Keplerian elements). Behind them is the real night sky: the stars of the Yale Bright Star Catalogue
 that can be seen with the naked eye, in their true places, brightness and colours, and a faint Milky Way band. A
 few stars twinkle now and then, and every so often a comet streaks past. The camera eases in towards the Earth, marked "You are here", with the date and how far the Earth is from the Sun that day, in miles and kilometres. Distances are to
-scale; the planets are drawn larger. "← Back", a click anywhere or Esc flies back from any point. With "reduce
+scale; the planets are drawn larger.
+
+At the Earth, visitors can explore: the mouse wheel, a pinch or the "+"/"−" buttons zoom out to the whole solar
+system, past Neptune, and back in. Clicking or tapping the Sun or a planet, or its name, rings it and shows its
+distance: the Sun's from the centre of the Milky Way, a planet's from the Sun on that day. The names are buttons, so
+the keyboard reaches them too, and "+"/"−" keys zoom.
+
+"← Back" or Esc flies back from any point; out in the galaxy (before the dive into the Sun), so does a click
+anywhere. With "reduce
 motion" on, each step cuts straight to the next instead of flying, and the sky stays still, with no comets.
 
 ## Files

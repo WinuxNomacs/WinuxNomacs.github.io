@@ -14,9 +14,11 @@ Clicking the head (or pressing Enter on it) starts a tour. The head and the quot
 the top edge, and the camera flies through the galaxy to the Sun's real place in it, about 26,700 light-years from
 the centre, where a marker appears. Then it dives into the Sun, and the solar system fades in: the Sun, the eight
 planets and their orbits, with each planet where it really is on the visitor's date (worked out in the browser from
-NASA JPL's Keplerian elements). The camera eases in towards the Earth, marked "You are here", with the date and how far the Earth is from the Sun that day, in miles and kilometres. Distances are to
+NASA JPL's Keplerian elements). Behind them is the real night sky: the stars of the Yale Bright Star Catalogue
+that can be seen with the naked eye, in their true places, brightness and colours, and a faint Milky Way band. A
+few stars twinkle now and then, and every so often a comet streaks past. The camera eases in towards the Earth, marked "You are here", with the date and how far the Earth is from the Sun that day, in miles and kilometres. Distances are to
 scale; the planets are drawn larger. "← Back", a click anywhere or Esc flies back from any point. With "reduce
-motion" on, each step cuts straight to the next instead of flying.
+motion" on, each step cuts straight to the next instead of flying, and the sky stays still, with no comets.
 
 ## Files
 
@@ -27,12 +29,25 @@ Everything the site serves is in `docs/`:
 - `main.js`: the mouse/tilt effect, the WebGL galaxy, the solar system and the tour
 - `quotes.md`: the quotes, one per `- ` list line
 - `quotes.js`: shows the quotes
+- `stars.bin`: the night sky's stars (see below)
 - `assets/img/gargoyle-cutout-707.webp`, `gargoyle-cutout-1414.webp`: the head with its background cut out, at two
   sizes; high-density screens get the larger one
 - `assets/img/gargoyle-707.jpg`: the favicon
 - `.nojekyll`: tells GitHub Pages to serve the files as they are
 
 The site has no build step and no dependencies.
+
+## The stars
+
+`docs/stars.bin` holds the 5,023 stars brighter than magnitude 6 from the Yale Bright Star Catalogue, 5th Revised
+Edition (Hoffleit & Warren 1991, VizieR catalogue V/50 from CDS, Strasbourg). `tools/make-stars.py` makes it from
+the catalogue file (CDS's `catalog.gz`, or the same data as Harvard's
+<http://tdc-www.harvard.edu/catalogs/bsc5.dat.gz>); its comments describe the layout:
+
+```sh
+curl -O https://cdsarc.cds.unistra.fr/ftp/V/50/catalog.gz
+python3 -I tools/make-stars.py catalog.gz docs/stars.bin
+```
 
 ## Quotes
 

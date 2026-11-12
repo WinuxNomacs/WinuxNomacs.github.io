@@ -2,9 +2,8 @@
 
 ## Phases (current and upcoming)
 
-- **Up next:** 1. A livelier sky in the solar system: more stars, some twinkling, and comets
-- **Then:** 2. Explore the solar system: zoom out and in, and click the Sun and planets for their distances
-- **Later:** 3. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
+- **Up next:** 1. Explore the solar system: zoom out and in, and click the Sun and planets for their distances
+- **Later:** 2. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
 
 ## Solar system: a livelier sky, and exploring it
 
@@ -27,7 +26,7 @@
 **Conflict:** during the tour, a click anywhere goes back to the landing page, so clicking a planet would leave the
 solar system. That behaviour has to change at this stage (see the decisions).
 
-**Proposed phases:**
+**Proposed phases** (phase 1, the livelier sky, is done, see below):
 1. **A livelier sky:** the real night sky behind the solar system (catalogue stars and a faint Milky Way band), a
    few stars twinkling gently at random; now and then a faint comet with a glowing tail streaks across the background, behind the
    planets. Under reduced motion: stars stay still, no comets.
@@ -87,6 +86,22 @@ with a pointer on the Earth that says "You are here". Use real data where it exi
 - **Planet positions:** live, for the visitor's date.
 
 ## Done
+
+### Solar system: a livelier sky (2026-11-12)
+
+**Built** in `docs/main.js` (the sky section: `buildSky`, `skyProg`, the comets and `drawSky`), `docs/stars.bin`
+and `tools/make-stars.py`. The solar system's background is now the real night sky: the 5,023 stars of the Yale
+Bright Star Catalogue (5th edition) brighter than magnitude 6, in their true directions (J2000, tilted onto the
+ecliptic the planets use), sized and dimmed by magnitude and coloured by B-V, from a 30 KB file (6 bytes a star).
+The Milky Way is a band of large faint points (sized as an angle on the sky, so it looks the same on any screen)
+and tiny ones along the galactic plane, brighter and thicker towards the centre in Sagittarius. About 15% of the
+stars brighter than magnitude 4.5 flicker for a few seconds now and then. A comet with a glowing tail crosses part
+of the screen a few seconds after arriving, then every 6–15 s, behind the planets. Under reduced motion the stars
+stay still and there are no comets. Until `stars.bin` loads (or if it can't), the galaxy's generated stars stand in.
+The galaxy stage is unchanged.
+**Checked** in headless Chromium (scratch `sky.js`, `diff.js`): `stars.bin` decodes (Sirius, Canopus, Arcturus at
+their catalogue positions); desktop frames over 17 s at the Earth show twinkles and two comets; a phone at 390 px
+with reduced motion shows the same sky with identical frames; no console errors.
 
 ### Small changes (2026-11-12)
 

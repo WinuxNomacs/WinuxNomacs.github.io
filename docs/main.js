@@ -378,6 +378,177 @@
   }
 
   // ---------------------------------------------------------------------------
+  // The sky behind the solar system: the real night sky. The stars of the Yale Bright Star Catalogue brighter
+  // than magnitude 6 (stars.bin, made by tools/make-stars.py) in their true directions, brightness and colours,
+  // a faint Milky Way band along the galactic plane, a few stars twinkling now and then, and every 6–15 seconds
+  // a faint comet. Until stars.bin has arrived (or if it can't be read), the galaxy's distant stars stand in.
+  // ---------------------------------------------------------------------------
+  // Per point: direction x, y, z, r, g, b, size in px (or, when negative, an angle in radians, so the Milky Way's
+  // glow keeps its size on the sky on any screen), twinkle phase (0 = steady).
+  const SKY_STRIDE = 8;
+  const BAND_HAZE = area < 500000 ? 1600 : 2600; // large faint points that blur into the band's glow
+  const BAND_STARS = area < 500000 ? 2500 : 5000; // tiny faint ones that give it grain
+  const COMET_POINTS = 90;  // the head, then the tail
+  const OBLIQUITY = 23.4393 * RAD;
+  // An equatorial (J2000) direction to the drawing's axes: tilted to the ecliptic, then as fromEcliptic does.
+  const fromEquatorial = ([x, y, z]) => fromEcliptic([x, y * Math.cos(OBLIQUITY) + z * Math.sin(OBLIQUITY),
+                                                      -y * Math.sin(OBLIQUITY) + z * Math.cos(OBLIQUITY)]);
+  // Galactic to equatorial: the rows of the standard (Hipparcos) equatorial-to-galactic rotation, weighted.
+  const GALACTIC = [[-0.0548755604, -0.8734370902, -0.4838350155],
+                    [0.4941094279, -0.4448296300, 0.7469822445],
+                    [-0.8676661490, -0.1980763734, 0.4559837762]];
+  const fromGalactic = (l, b) => {
+    const g = [Math.cos(b) * Math.cos(l), Math.cos(b) * Math.sin(l), Math.sin(b)];
+    return fromEquatorial([0, 1, 2].map((i) => g[0] * GALACTIC[0][i] + g[1] * GALACTIC[1][i] + g[2] * GALACTIC[2][i]));
+  };
+  // Star colours by colour index B-V, from hot blue-white to cool orange.
+  const BV_COLOURS = [[-0.3, [0.62, 0.72, 1.0]], [0.0, [0.82, 0.88, 1.0]], [0.6, [1.0, 0.97, 0.9]],
+                      [1.1, [1.0, 0.84, 0.64]], [1.8, [1.0, 0.68, 0.44]]];
+  function starColour(bv) {
+    let i = 1;
+    while (i < BV_COLOURS.length - 1 && bv > BV_COLOURS[i][0]) i++;
+    const [b0, c0] = BV_COLOURS[i - 1], [b1, c1] = BV_COLOURS[i];
+    return mix(c0, c1, Math.min(1, Math.max(0, (bv - b0) / (b1 - b0))));
+  }
+
+  const SKY_VERT = `
+    attribute vec3 aPos;
+    attribute vec3 aColor;
+    attribute vec2 aLook;    // size (px, or radians when negative), twinkle phase (0 = steady)
+    uniform mat3 uView;
+    uniform vec2 uProj;
+    uniform float uDpr;
+    uniform float uPxPerRad; // CSS px per radian across the middle of the screen
+    uniform float uGain;
+    uniform float uTime;
+    uniform float uTwinkle;  // 0 under reduced motion
+    varying vec3 vColor;
+    void main() {
+      vec3 v = uView * aPos;   // a direction: the sky is seen from its middle
+      gl_Position = vec4(v.x * uProj.x, v.y * uProj.y, 0.0, -v.z);
+      gl_PointSize = (aLook.x < 0.0 ? -aLook.x * uPxPerRad : aLook.x) * uDpr;
+      float glint = 1.0;
+      if (aLook.y > 0.0) {
+        // Now and then (a few seconds in every half minute or so) the star flickers.
+        float bout = pow(max(0.0, sin(uTime * 0.21 + aLook.y)), 12.0);
+        glint += uTwinkle * 0.65 * bout * sin(uTime * (5.0 + fract(aLook.y) * 5.0) + aLook.y * 7.0);
+      }
+      vColor = aColor * uGain * glint;
+    }`;
+  const skyProg = link(SKY_VERT, FRAG, ['aPos', 'aColor', 'aLook']);
+  const ku = (name) => gl.getUniformLocation(skyProg, name);
+  const kView = ku('uView'), kProj = ku('uProj'), kDpr = ku('uDpr'), kPxPerRad = ku('uPxPerRad'), kGain = ku('uGain');
+  const kTime = ku('uTime'), kTwinkle = ku('uTwinkle');
+  const skyBuf = gl.createBuffer(), cometBuf = gl.createBuffer();
+  const sky = { count: 0, comet: null, next: 0 };
+  const cometData = new Float32Array(COMET_POINTS * SKY_STRIDE);
+
+  // Builds the sky from stars.bin (see tools/make-stars.py for its layout): the Milky Way first, then the stars.
+  function buildSky(bytes) {
+    const view = new DataView(bytes), count = Math.floor(bytes.byteLength / 6);
+    const data = new Float32Array((BAND_HAZE + BAND_STARS + count) * SKY_STRIDE);
+    let k = 0;
+    const put = (p, c, bright, size, twinkle) => {
+      data.set([p[0], p[1], p[2], c[0] * bright, c[1] * bright, c[2] * bright, size, twinkle], k);
+      k += SKY_STRIDE;
+    };
+    // The band: brighter and thicker towards the galactic centre (in Sagittarius), fading to the anticentre.
+    for (let i = 0; i < BAND_HAZE + BAND_STARS; i++) {
+      let l;
+      do { l = (rand() * 2 - 1) * Math.PI; } while (rand() > 0.25 + 0.75 * Math.cos(l / 2) ** 2);
+      const bulge = Math.exp(-(l * l) / (2 * 0.4 * 0.4));
+      const b = gauss() * (0.05 + 0.09 * bulge);
+      const c = mix(WHITE, WARM, 0.15 + 0.4 * bulge);
+      const strength = 0.45 + 0.55 * Math.cos(l / 2) ** 2;
+      if (i < BAND_HAZE) put(fromGalactic(l, b), c, (0.01 + 0.014 * bulge) * strength, -(0.06 + rand() * 0.05), 0);
+      else put(fromGalactic(l, b), c, (0.03 + rand() * 0.06) * strength, 3, 0);
+    }
+    // The stars, brightest first: brighter ones are drawn larger, and some of them twinkle. Points under 3px
+    // would only show the edge of their glow, so the faint ones are 3px and dimmer instead.
+    for (let i = 0; i < count; i++) {
+      const ra = (view.getUint16(i * 6, true) / 65535) * 2 * Math.PI;
+      const dec = (view.getUint16(i * 6 + 2, true) / 65535 - 0.5) * Math.PI;
+      const mag = view.getUint8(i * 6 + 4) / 25 - 2, bv = view.getUint8(i * 6 + 5) / 100 - 0.5;
+      const p = fromEquatorial([Math.cos(dec) * Math.cos(ra), Math.cos(dec) * Math.sin(ra), Math.sin(dec)]);
+      const size = Math.max(3, 5.5 - 0.5 * mag);
+      const bright = Math.min(2, 1.5 * 10 ** (-0.13 * mag));
+      put(p, starColour(bv), bright, size, mag < 4.5 && rand() < 0.15 ? 1 + rand() * 50 : 0);
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, skyBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, cometBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, cometData, gl.DYNAMIC_DRAW);
+    sky.count = k / SKY_STRIDE;
+  }
+  fetch('stars.bin')
+    .then((res) => (res.ok ? res.arrayBuffer() : Promise.reject(new Error(res.status))))
+    .then(buildSky, () => {}); // no catalogue: the generated stars stay
+
+  // A comet starts somewhere on screen and crosses part of it along a great circle of the sky, fading in and
+  // out, with its tail trailing behind it.
+  function launchComet(cam, t) {
+    const sx = (Math.random() * 1.4 - 0.7) / proj.fx, sy = (Math.random() * 1.2 - 0.6) / proj.fy;
+    const mid = norm(cam.right.map((r, i) => r * sx + cam.up[i] * sy - cam.back[i]));
+    const a = Math.random() * 2 * Math.PI;
+    const way = cam.right.map((r, i) => r * Math.cos(a) + cam.up[i] * Math.sin(a));
+    const along = norm(sub(way, mid.map((m) => m * dot(way, mid))));
+    const width = 2 * Math.atan(1 / proj.fx); // the screen's width, as an angle
+    const life = 2.5 + Math.random() * 1.5;
+    sky.comet = { mid, along, born: t, life, travel: width * (0.25 + Math.random() * 0.2), tail: width * (0.1 + Math.random() * 0.06) };
+  }
+  // Moves the comet to time t; returns false once it has gone.
+  function stepComet(t) {
+    const c = sky.comet, age = (t - c.born) / c.life;
+    if (age >= 1) return false;
+    const fade = Math.sin(Math.PI * age);
+    const head = c.travel * (age - 0.5);
+    for (let k = 0; k < COMET_POINTS; k++) {
+      const f = k / (COMET_POINTS - 1), angle = head - f * c.tail;
+      const p = c.mid.map((m, i) => m * Math.cos(angle) + c.along[i] * Math.sin(angle));
+      const bright = fade * (k === 0 ? 1.2 : 0.5 * (1 - f) ** 1.3);
+      const col = mix([0.92, 0.96, 1.0], [0.5, 0.72, 1.0], f);
+      cometData.set([p[0], p[1], p[2], col[0] * bright, col[1] * bright, col[2] * bright,
+                     k === 0 ? 8 : 5 - 2 * f, 0], k * SKY_STRIDE);
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, cometBuf);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, cometData);
+    return true;
+  }
+
+  // Draws the sky for the solar system camera; fade (0..1) as it fades in.
+  function drawSky(cam, view, fade, t) {
+    if (!sky.count) {
+      // The galaxy's distant stars, seen from the middle of their sphere.
+      useGalaxy();
+      gl.uniform3f(uCam, 0, 0, 0);
+      gl.uniformMatrix3fv(uView, false, view);
+      gl.uniform1f(uGain, 1.2 * fade);
+      gl.drawArrays(gl.POINTS, n - STAR_POINTS, STAR_POINTS);
+      return;
+    }
+    use(skyProg, skyBuf, SKY_STRIDE, [[3, 0], [3, 3], [2, 6]]);
+    gl.uniformMatrix3fv(kView, false, view);
+    gl.uniform2f(kProj, proj.fx, proj.fy);
+    gl.uniform1f(kDpr, proj.dpr);
+    gl.uniform1f(kPxPerRad, (proj.fy * innerHeight) / 2);
+    gl.uniform1f(kGain, fade);
+    gl.uniform1f(kTime, t);
+    gl.uniform1f(kTwinkle, reduced ? 0 : 1);
+    gl.drawArrays(gl.POINTS, 0, sky.count);
+    if (reduced) return;
+    // Comets: the first a few seconds after arriving, then one every 6–15 seconds.
+    if (!sky.comet && t >= sky.next) {
+      launchComet(cam, t);
+      sky.next = t + 6 + Math.random() * 9;
+    }
+    if (sky.comet && !stepComet(t)) sky.comet = null;
+    if (sky.comet) {
+      use(skyProg, cometBuf, SKY_STRIDE, [[3, 0], [3, 3], [2, 6]]);
+      gl.drawArrays(gl.POINTS, 0, COMET_POINTS);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // The tour: clicking the head flies the camera through the galaxy to the Sun's place in it, dives into the
   // Sun, crossfades to the solar system and eases in towards the Earth: "You are here".
   // ---------------------------------------------------------------------------
@@ -613,12 +784,7 @@
     if (solarFade > 0 && solar.date) {
       const cam = solarCamera(ease(part(tourT, IN_SYSTEM, ZOOM)), solarFade);
       const view = viewMatrix(cam);
-      // The sky: the distant stars, seen from the middle of their sphere.
-      useGalaxy();
-      gl.uniform3f(uCam, 0, 0, 0);
-      gl.uniformMatrix3fv(uView, false, view);
-      gl.uniform1f(uGain, 1.2 * solarFade);
-      gl.drawArrays(gl.POINTS, n - STAR_POINTS, STAR_POINTS);
+      drawSky(cam, view, solarFade, t);
       // Orbits, then the Sun and planets on top.
       useSolar();
       gl.uniform3f(sCam, cam.eye[0], cam.eye[1], cam.eye[2]);
@@ -635,6 +801,8 @@
       const xy = project(solar.bodies[3].pos, cam);
       if (xy) place(earthMarker, xy);
     }
+    // Out of the solar system: no comet, and the first one comes a few seconds after arriving again.
+    if (solarFade === 0) { sky.comet = null; sky.next = t + 2 + Math.random() * 3; }
     labels.style.opacity = solarFade.toFixed(3);
     frame = reduced ? null : requestAnimationFrame(draw);
   }

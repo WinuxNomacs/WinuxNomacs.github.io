@@ -36,5 +36,10 @@ A static GitHub Pages site (<https://winuxnomacs.github.io/>): one page, plain H
   `LINE_LOOP` orbits) and places the planets for the visitor's date from `PLANETS`, NASA JPL's "Approximate
   Positions of the Planets" Table 1 (valid 1800–2050; units are AU, distances true, dot sizes in px). Both programs
   bind their attributes at fixed locations, and `use()` switches between them.
+- **Sky:** behind the solar system, `main.js` (the sky section) draws `docs/stars.bin` (the Yale Bright Star
+  Catalogue's stars brighter than magnitude 6, made by `tools/make-stars.py`, which documents the 6-byte layout)
+  with its own program (`skyProg`), plus the Milky Way band, twinkling and the comets. Directions are J2000
+  equatorial turned onto the ecliptic (`fromEquatorial`), so they match the planets. Sky point sizes are px, or
+  radians when negative (the band's glow). `tools/` is not served.
 - **Eye glow position:** the glow is placed at the lit eye, which sits at 53.0% / 32.8% of the image.
   If the image changes, measure the eye again.

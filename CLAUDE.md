@@ -24,10 +24,17 @@ A static GitHub Pages site (<https://winuxnomacs.github.io/>): one page, plain H
   look are set by the constants at the top of the galaxy section (`TILT`, `ROLL`, `SPIN`, the point counts) and
   the `uGain` brightness. The arms, the bar and `SUN` follow the measured Milky Way (1 unit = 1.36 kpc; the comments
   give the sources' numbers), so keep them consistent if the layout changes: the tour flies to `SUN`. Headless Chromium renders it in software at about 30 fps, so judge speed on a real GPU.
-- **Tour:** `main.js` (the tour section) makes the head a button once WebGL works, and flies the camera to `SUN`
-  (`FLY` seconds; the final view is `VIEW`, in the disc's coordinates). The shader's `uView` is the camera's
-  orientation (identity on the landing page) and `uStarCap` keeps nearby stars small. `body.touring` fades the head
-  and the quote and lifts the banner by `--lift`; `#back`, `#sun-marker` and the `#tour-status` live region are in
-  `index.html`. Playwright clicks on the head need `force: true`, because the head never stops drifting.
+- **Tour:** `main.js` (the tour section) makes the head a button once WebGL works. The tour is one timeline in
+  seconds (`tourT`): `FLY` to the Sun (final view `VIEW`, in the disc's coordinates), `HOLD` there with its marker,
+  `DIVE` into it while the galaxy fades out and the solar system fades in, then `ZOOM` towards the Earth
+  (`SOLAR_VIEW`). The way back always takes `FLY` seconds. The galaxy shader's `uView` is the camera's orientation
+  (identity on the landing page) and `uStarCap` keeps nearby stars small. `body.touring` fades the head and the
+  quote and lifts the banner by `--lift`; `#back`, `#sun-marker`, `#earth-marker`, `#planet-labels`, `#tour-note`
+  and the `#tour-status` live region are in `index.html`. Playwright clicks on the head need `force: true`, because
+  the head never stops drifting; a full tour takes about 17 s in headless Chromium.
+- **Solar system:** `main.js` (the solar system section) has its own small WebGL program (`solarProg`, dots and
+  `LINE_LOOP` orbits) and places the planets for the visitor's date from `PLANETS`, NASA JPL's "Approximate
+  Positions of the Planets" Table 1 (valid 1800–2050; units are AU, distances true, dot sizes in px). Both programs
+  bind their attributes at fixed locations, and `use()` switches between them.
 - **Eye glow position:** the glow is placed at the lit eye, which sits at 53.0% / 32.8% of the image.
   If the image changes, measure the eye again.

@@ -29,10 +29,16 @@
   </main>
 
   <button class="back line" id="back" type="button">← Back</button>
-  <div class="sun-marker" id="sun-marker" aria-hidden="true">
-    <span class="sun-ring"></span>
-    <span class="sun-label">The Sun<small>26,700 light-years from the centre</small></span>
+  <div class="marker marker--sun" id="sun-marker" aria-hidden="true">
+    <span class="marker-ring"></span>
+    <span class="marker-label">The Sun<small>26,700 light-years from the centre</small></span>
   </div>
+  <div class="planet-labels" id="planet-labels" aria-hidden="true"></div>
+  <div class="marker marker--earth" id="earth-marker" aria-hidden="true">
+    <span class="marker-ring"></span>
+    <span class="marker-label">You are here<small id="earth-date">The Earth</small></span>
+  </div>
+  <p class="line tour-note" id="tour-note" aria-hidden="true"></p>
   <p class="sr-only" id="tour-status" role="status"></p>
 
   <script src="main.js" defer></script>

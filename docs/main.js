@@ -211,23 +211,36 @@
     if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
     return s;
   };
-  const prog = gl.createProgram();
-  gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT));
-  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG));
-  gl.linkProgram(prog);
-  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
-  gl.useProgram(prog);
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-  gl.bufferData(gl.ARRAY_BUFFER, buf, gl.STATIC_DRAW);
-  const attr = (name, size, offset) => {
-    const loc = gl.getAttribLocation(prog, name);
-    gl.enableVertexAttribArray(loc);
-    gl.vertexAttribPointer(loc, size, gl.FLOAT, false, STRIDE * 4, offset * 4);
+  // Links a program with its attributes at fixed locations 0, 1, 2…, so switching programs only re-points them.
+  const link = (vert, frag, attrs) => {
+    const p = gl.createProgram();
+    gl.attachShader(p, compile(gl.VERTEX_SHADER, vert));
+    gl.attachShader(p, compile(gl.FRAGMENT_SHADER, frag));
+    attrs.forEach((name, i) => gl.bindAttribLocation(p, i, name));
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+    return p;
   };
-  attr('aPos', 3, 0);
-  attr('aColor', 3, 3);
-  attr('aSizeSpin', 2, 6);
+  // Makes a program current with its buffer; layout lists each attribute's [size, offset] in floats.
+  const use = (p, buffer, stride, layout) => {
+    gl.useProgram(p);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    for (let i = 0; i < 3; i++) {
+      if (i < layout.length) {
+        gl.enableVertexAttribArray(i);
+        gl.vertexAttribPointer(i, layout[i][0], gl.FLOAT, false, stride * 4, layout[i][1] * 4);
+      } else {
+        gl.disableVertexAttribArray(i);
+      }
+    }
+  };
+
+  const prog = link(VERT, FRAG, ['aPos', 'aColor', 'aSizeSpin']);
+  const galaxyBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, galaxyBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, buf, gl.STATIC_DRAW);
+  const useGalaxy = () => use(prog, galaxyBuf, STRIDE, [[3, 0], [3, 3], [2, 6]]);
+  useGalaxy();
 
   const u = (name) => gl.getUniformLocation(prog, name);
   const uAngle = u('uAngle'), uTiltRoll = u('uTiltRoll'), uCam = u('uCam'), uView = u('uView');
@@ -243,32 +256,154 @@
   function resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = innerWidth, h = innerHeight, aspect = w / h;
-    gl.uniform1f(uStarCap, 7 * dpr);
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(h * dpr);
     gl.viewport(0, 0, canvas.width, canvas.height);
     // Wide screens: the disc spans a little past the edges. Tall screens: zoom in on the centre.
     const f = (DIST / RADIUS) * Math.max(1.1 * aspect, 1.05);
+    proj = { fx: f / aspect, fy: f, dpr };
+    useGalaxy();
+    gl.uniform1f(uStarCap, 7 * dpr);
     gl.uniform2f(uProj, f / aspect, f);
-    proj = { fx: f / aspect, fy: f };
     gl.uniform1f(uPx, (f * Math.max(h, w * 0.6) * dpr) / 2 * 0.02);
   }
 
+
   // ---------------------------------------------------------------------------
-  // The tour: clicking the head flies the camera through the galaxy to the Sun's place in it.
+  // The solar system: the Sun, the 8 planets where they are on the visitor's date, and their orbits.
+  // Positions come from NASA JPL's "Approximate Positions of the Planets" (Keplerian elements at J2000 and
+  // their rates per century, good for 1800–2050). Units are AU; distances are true, the dots are not.
   // ---------------------------------------------------------------------------
-  const FLY = 6; // seconds for the flight out (or back)
-  // Where the camera ends up, in the disc's own coordinates: outside the Sun's orbit and above the disc,
+  // name, colour, dot size in px, [a, e, I, L, long. of perihelion, long. of node], then the rates per century.
+  const PLANETS = [
+    ['Mercury', [0.75, 0.72, 0.68], 12, [0.38709927, 0.20563593, 7.00497902, 252.25032350, 77.45779628, 48.33076593],
+      [0.00000037, 0.00001906, -0.00594749, 149472.67411175, 0.16047689, -0.12534081]],
+    ['Venus', [1.0, 0.88, 0.62], 16, [0.72333566, 0.00677672, 3.39467605, 181.97909950, 131.60246718, 76.67984255],
+      [0.00000390, -0.00004107, -0.00078890, 58517.81538729, 0.00268329, -0.27769418]],
+    ['Earth', [0.45, 0.72, 1.0], 17, [1.00000261, 0.01671123, -0.00001531, 100.46457166, 102.93768193, 0.0],
+      [0.00000562, -0.00004392, -0.01294668, 35999.37244981, 0.32327364, 0.0]],
+    ['Mars', [1.0, 0.5, 0.32], 14, [1.52371034, 0.09339410, 1.84969142, -4.55343205, -23.94362959, 49.55953891],
+      [0.00001847, 0.00007882, -0.00813131, 19140.30268499, 0.44441088, -0.29257343]],
+    ['Jupiter', [0.95, 0.8, 0.6], 24, [5.20288700, 0.04838624, 1.30439695, 34.39644051, 14.72847983, 100.47390909],
+      [-0.00011607, -0.00013253, -0.00183714, 3034.74612775, 0.21252668, 0.20469106]],
+    ['Saturn', [1.0, 0.88, 0.6], 23, [9.53667594, 0.05386179, 2.48599187, 49.95424423, 92.59887831, 113.66242448],
+      [-0.00125060, -0.00050991, 0.00193609, 1222.49362201, -0.41897216, -0.28867794]],
+    ['Uranus', [0.62, 0.92, 0.95], 18, [19.18916464, 0.04725744, 0.77263783, 313.23810451, 170.95427630, 74.01692503],
+      [-0.00196176, -0.00004397, -0.00242939, 428.48202785, 0.40805281, 0.04240589]],
+    ['Neptune', [0.48, 0.62, 1.0], 18, [30.06992276, 0.00859048, 1.77004347, -55.12002969, 44.96476227, 131.78422574],
+      [0.00026291, 0.00005105, 0.00035372, 218.45945325, -0.32241464, -0.00508664]],
+  ];
+  const RAD = Math.PI / 180;
+  const ORBIT_STEPS = 160;
+  const SOLAR_STRIDE = 7; // x, y, z, r, g, b, size
+
+  // Where a planet is for T (Julian centuries since J2000): solves Kepler's equation, or uses the eccentric
+  // anomaly E when given (for drawing the orbit). Returns ecliptic x, y, z in AU.
+  function orbitPoint(el, rate, T, E) {
+    const [a, e, I, L, peri, node] = el.map((v, i) => v + rate[i] * T);
+    if (E === undefined) {
+      const M = ((((L - peri) % 360) + 540) % 360 - 180) * RAD;
+      E = M + e * Math.sin(M);
+      for (let k = 0; k < 8; k++) E -= (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
+    }
+    const xp = a * (Math.cos(E) - e), yp = a * Math.sqrt(1 - e * e) * Math.sin(E);
+    const w = (peri - node) * RAD, O = node * RAD, i = I * RAD;
+    const cw = Math.cos(w), sw = Math.sin(w), cO = Math.cos(O), sO = Math.sin(O), ci = Math.cos(i), si = Math.sin(i);
+    return [
+      (cw * cO - sw * sO * ci) * xp + (-sw * cO - cw * sO * ci) * yp,
+      (cw * sO + sw * cO * ci) * xp + (-sw * sO + cw * cO * ci) * yp,
+      sw * si * xp + cw * si * yp,
+    ];
+  }
+  // Ecliptic to the drawing's axes: the ecliptic plane is horizontal (y up), north is up.
+  const fromEcliptic = ([x, y, z]) => [x, z, -y];
+
+  const SOLAR_VERT = `
+    attribute vec3 aPos;
+    attribute vec4 aLook;  // colour, dot size in px
+    uniform vec3 uCam;
+    uniform mat3 uView;
+    uniform vec2 uProj;
+    uniform float uDpr;
+    uniform float uFade;
+    varying vec3 vColor;
+    void main() {
+      vec3 v = uView * (aPos - uCam);
+      gl_Position = vec4(v.x * uProj.x, v.y * uProj.y, 0.0, -v.z);
+      gl_PointSize = aLook.w * uDpr;
+      vColor = aLook.rgb * uFade;
+    }`;
+  const SOLAR_FRAG = `
+    precision mediump float;
+    uniform float uFlat;  // 1 for orbit lines, 0 for dots
+    varying vec3 vColor;
+    void main() {
+      if (uFlat > 0.5) { gl_FragColor = vec4(vColor, 1.0); return; }
+      vec2 c = gl_PointCoord * 2.0 - 1.0;
+      float d = dot(c, c);
+      if (d > 1.0) discard;
+      // A solid disc with a soft glow around it.
+      gl_FragColor = vec4(vColor * (1.0 - smoothstep(0.22, 0.36, d) + 0.35 * exp(-d * 4.0)), 1.0);
+    }`;
+  const solarProg = link(SOLAR_VERT, SOLAR_FRAG, ['aPos', 'aLook']);
+  const su = (name) => gl.getUniformLocation(solarProg, name);
+  const sCam = su('uCam'), sView = su('uView'), sProj = su('uProj'), sDpr = su('uDpr');
+  const sFade = su('uFade'), sFlat = su('uFlat');
+  const solarBuf = gl.createBuffer();
+  const useSolar = () => use(solarProg, solarBuf, SOLAR_STRIDE, [[3, 0], [4, 3]]);
+  const solar = { date: null, bodies: [] }; // bodies: { name, pos } for the Sun and each planet
+
+  // Places everything for the given date: the Sun and planets first, then each orbit as a loop of points.
+  function buildSolar(date) {
+    const T = (date.getTime() / 86400000 + 2440587.5 - 2451545) / 36525;
+    const data = new Float32Array((1 + PLANETS.length * (1 + ORBIT_STEPS)) * SOLAR_STRIDE);
+    let k = 0;
+    const put = (p, c, size) => { data.set([p[0], p[1], p[2], c[0], c[1], c[2], size], k); k += SOLAR_STRIDE; };
+    solar.bodies = [{ name: 'Sun', pos: [0, 0, 0] }];
+    put([0, 0, 0], [1.25, 1.05, 0.7], 34);
+    for (const [name, colour, size, el, rate] of PLANETS) {
+      const pos = fromEcliptic(orbitPoint(el, rate, T));
+      solar.bodies.push({ name, pos });
+      put(pos, colour, size);
+    }
+    for (const [name, , , el, rate] of PLANETS) {
+      const c = name === 'Earth' ? [0.22, 0.32, 0.5] : [0.13, 0.15, 0.21];
+      for (let j = 0; j < ORBIT_STEPS; j++) {
+        put(fromEcliptic(orbitPoint(el, rate, T, (j / ORBIT_STEPS) * Math.PI * 2)), c, 0);
+      }
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, solarBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+    solar.date = date;
+  }
+
+  // ---------------------------------------------------------------------------
+  // The tour: clicking the head flies the camera through the galaxy to the Sun's place in it, dives into the
+  // Sun, crossfades to the solar system and eases in towards the Earth: "You are here".
+  // ---------------------------------------------------------------------------
+  const FLY = 6;    // seconds: the flight through the galaxy to the Sun
+  const HOLD = 1.5; // seconds at the Sun, with its marker
+  const DIVE = 3;   // seconds diving into the Sun while the galaxy fades out and the solar system fades in
+  const ZOOM = 6;   // seconds easing in from the whole solar system towards the Earth
+  const AT_SUN = FLY, LEAVE_SUN = AT_SUN + HOLD, IN_SYSTEM = LEAVE_SUN + DIVE, AT_EARTH = IN_SYSTEM + ZOOM;
+  // Where the galaxy flight ends, in the disc's own coordinates: outside the Sun's orbit and above the disc,
   // looking at a point a little past the Sun towards the centre, so the Sun sits low with the core beyond.
   const VIEW = { out: 6, ahead: 0.2, up: 5, lead: 0.35 };
+  // The solar system views: from above the ecliptic at `wide` (whole system) then `close` (round the Earth),
+  // degrees of elevation, and how far towards the Earth the close view looks (0 = the Sun, 1 = the Earth).
+  const SOLAR_VIEW = { wideEl: 62, closeEl: 34, lead: 0.55 };
   const head = document.getElementById('head');
   const quote = document.getElementById('quote');
   const banner = document.querySelector('.line--top');
   const back = document.getElementById('back');
-  const marker = document.getElementById('sun-marker');
+  const sunMarker = document.getElementById('sun-marker');
+  const earthMarker = document.getElementById('earth-marker');
+  const labels = document.getElementById('planet-labels');
+  const note = document.getElementById('tour-note');
   const status = document.getElementById('tour-status');
-  let tourP = 0;    // 0 = landing page, 1 = at the Sun
-  let tourGoal = 0; // where the flight is heading
+  let tourT = 0;    // seconds along the tour: 0 = landing page, AT_EARTH = "You are here"
+  let tourGoal = 0; // 0 or AT_EARTH
+  let backRate = 1; // the way back always takes FLY seconds, however far the tour got
 
   // A point in the disc's coordinates, turned with the galaxy and tilted/rolled as the shader does it.
   function toWorld(x, y, z, angle) {
@@ -286,9 +421,23 @@
   const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
   const norm = (a) => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
   const ease = (p) => p * p * p * (p * (p * 6 - 15) + 10); // starts and ends gently
+  const part = (t, from, length) => Math.min(1, Math.max(0, (t - from) / length)); // 0..1 through a stage
+  const logLerp = (a, b, t) => Math.exp(Math.log(a) + (Math.log(b) - Math.log(a)) * t);
+  // A camera looking from eye at look, with up as near to upHint as it can be.
+  function lookAt(eye, look, upHint) {
+    const back3 = norm(sub(eye, look));
+    const right = norm(cross(upHint, back3));
+    return { eye, right, up: cross(back3, right), back: back3 };
+  }
+  // Where a point lands on screen in CSS pixels, or null when it is behind the camera.
+  function project(p, cam) {
+    const v = sub(p, cam.eye), w = -dot(v, cam.back);
+    if (w <= 0) return null;
+    return [(dot(v, cam.right) * proj.fx / w + 1) / 2 * innerWidth, (1 - dot(v, cam.up) * proj.fy / w) / 2 * innerHeight];
+  }
 
-  // The camera for a tour progress s (0..1): eye position and its right/up/back axes.
-  function camera(s, angle) {
+  // The galaxy camera for flight progress s (0..1) and dive progress d (0..1, into the Sun).
+  function galaxyCamera(s, d, angle) {
     const sun = toWorld(Math.cos(SUN.angle) * SUN.r, SUN.y, Math.sin(SUN.angle) * SUN.r, angle);
     const a = SUN.angle + VIEW.ahead, r = SUN.r + VIEW.out;
     const end = toWorld(Math.cos(a) * r, VIEW.up, Math.sin(a) * r, angle);
@@ -296,17 +445,33 @@
     const endDir = sub(end, focus), endDist = Math.hypot(...endDir);
     // Landing page: straight down -z from DIST away, nudged against the pointer for depth.
     const home = [-current.x * 1.6, current.y * 1.0, 0];
-    const look = lerp3(home, focus, ease(Math.min(1, s * 1.4)));
-    const dist = Math.exp(Math.log(DIST) + (Math.log(endDist) - Math.log(DIST)) * s);
+    const look = lerp3(lerp3(home, focus, ease(Math.min(1, s * 1.4))), sun, d);
+    const dist = logLerp(logLerp(DIST, endDist, s), 0.02, d);
     const dir = norm(lerp3([0, 0, 1], norm(endDir), s));
     let eye = look.map((v, i) => v + dir[i] * dist);
-    // At the Sun the pointer still sways the camera a little.
-    eye = [eye[0] - current.x * 0.12 * s, eye[1] + current.y * 0.08 * s, eye[2]];
-    const back3 = norm(sub(eye, look));
-    const upHint = norm(lerp3([0, 1, 0], toWorld(0, 1, 0, 0), s));
-    const right = norm(cross(upHint, back3));
-    const up = cross(back3, right);
-    return { eye, right, up, back: back3, sun };
+    // At the Sun the pointer still sways the camera a little (less as it dives in).
+    const sway = s * Math.min(1, dist / endDist);
+    eye = [eye[0] - current.x * 0.12 * sway, eye[1] + current.y * 0.08 * sway, eye[2]];
+    const cam = lookAt(eye, look, norm(lerp3([0, 1, 0], toWorld(0, 1, 0, 0), s)));
+    cam.sun = sun;
+    return cam;
+  }
+
+  // The solar system camera for zoom progress z (0..1); fading (0..1) pulls it further out while it fades in.
+  function solarCamera(z, fading) {
+    const earth = solar.bodies[3].pos;
+    const h = norm([earth[0], 0, earth[2]]); // from the Sun out past the Earth
+    const el = (SOLAR_VIEW.wideEl + (SOLAR_VIEW.closeEl - SOLAR_VIEW.wideEl) * z) * RAD;
+    // Distance at which a radius of 1 AU fills the screen's narrower way.
+    const fit = Math.max(proj.fx, proj.fy * Math.sin(el));
+    const wide = 36 * fit * (1 + 1.5 * (1 - fading)), close = 1.3 * fit;
+    const dist = logLerp(wide, close, z);
+    const look = earth.map((v) => v * SOLAR_VIEW.lead * z);
+    // From outside the Earth's side, looking back in at the Sun, so the Earth sits low with the Sun beyond.
+    const dir = [h[0] * Math.cos(el), Math.sin(el), h[2] * Math.cos(el)];
+    const side = norm(cross([0, 1, 0], dir));
+    const eye = look.map((v, i) => v + dir[i] * dist + (side[i] * -current.x * 0.03 + (i === 1 ? current.y * 0.02 : 0)) * dist);
+    return lookAt(eye, look, [0, 1, 0]);
   }
 
   // Lifts the banner to the top edge while touring (offsetTop ignores the lift itself).
@@ -314,10 +479,37 @@
     document.body.style.setProperty('--lift', (12 - banner.offsetTop) + 'px');
   }
 
-  function arrived() {
-    marker.classList.add('is-shown');
-    status.textContent = 'The Sun, about 26,700 light-years from the centre of the Milky Way.';
+  // Planet names, made once.
+  const labelEls = PLANETS.map(([name]) => name).concat('Sun').map((name) => {
+    const el = document.createElement('span');
+    el.className = 'planet-label';
+    el.dataset.name = name;
+    el.textContent = name;
+    labels.appendChild(el);
+    return { name, el };
+  });
+
+  let sunText = '', earthText = '';
+  function setDateTexts(date) {
+    const day = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    sunText = 'The Sun, about 26,700 light-years from the centre of the Milky Way.';
+    earthText = `You are here: the Earth, with the Sun and the planets where they are on ${day}.`;
+    document.getElementById('earth-date').textContent = `The Earth, ${day}`;
+    note.textContent = `The planets where they are on ${day}. Distances to scale; planets drawn larger.`;
   }
+
+  // Shows what belongs to the current point of the tour.
+  function showStage() {
+    const atSun = tourGoal > 0 && tourT >= AT_SUN && tourT < LEAVE_SUN;
+    const atEarth = tourT >= AT_EARTH;
+    sunMarker.classList.toggle('is-shown', atSun);
+    earthMarker.classList.toggle('is-shown', atEarth);
+    note.classList.toggle('is-shown', tourGoal > 0 && tourT >= IN_SYSTEM);
+    labelEls[2].el.classList.toggle('is-hidden', atEarth); // "You are here" replaces the Earth's name
+    const text = atEarth ? earthText : atSun ? sunText : '';
+    if (status.textContent !== text) status.textContent = text;
+  }
+
   function landed() {
     document.body.classList.remove('touring');
     head.inert = false;
@@ -326,9 +518,12 @@
   }
 
   function go() {
-    if (tourGoal === 1) return;
+    if (tourGoal) return;
+    const now = new Date();
+    buildSolar(now);
+    setDateTexts(now);
     measureBanner();
-    tourGoal = 1;
+    tourGoal = AT_EARTH;
     document.body.classList.add('touring');
     head.inert = true;
     quote.inert = true;
@@ -336,18 +531,21 @@
     kick();
   }
   function goBack() {
-    if (tourGoal === 0) return;
+    if (!tourGoal) return;
     tourGoal = 0;
-    marker.classList.remove('is-shown');
-    status.textContent = '';
+    backRate = Math.max(1, tourT / FLY);
     kick();
   }
-  // Starts the frame loop if it is idle (under reduced motion each step simply cuts).
+  // Starts the frame loop if it is idle. Under reduced motion each step cuts instead: to the Sun, a pause,
+  // then to the Earth; and straight home.
+  let cutTimer = null;
   function kick() {
     if (reduced) {
-      tourP = tourGoal;
+      clearTimeout(cutTimer);
+      tourT = tourGoal ? AT_SUN : 0;
       draw(0);
-      if (tourP === 1) arrived(); else landed();
+      if (tourGoal) cutTimer = setTimeout(() => { tourT = AT_EARTH; draw(0); }, 3000);
+      else landed();
     } else if (!frame && !document.hidden) {
       frame = requestAnimationFrame(draw);
     }
@@ -356,18 +554,20 @@
   // The head becomes a button only here, once WebGL is known to work.
   head.setAttribute('role', 'button');
   head.tabIndex = 0;
-  head.setAttribute('aria-label', 'Fly to the Sun’s place in the Milky Way');
+  head.setAttribute('aria-label', 'Fly through the Milky Way to the Earth');
   head.addEventListener('click', (e) => { e.stopPropagation(); go(); });
   head.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
   });
   back.addEventListener('click', (e) => { e.stopPropagation(); goBack(); });
   document.addEventListener('click', (e) => {
-    if (tourGoal === 1 && !e.target.closest('a')) goBack();
+    if (tourGoal && !e.target.closest('a')) goBack();
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') goBack();
   });
+
+  const place = (el, xy) => { el.style.transform = `translate(${xy[0].toFixed(1)}px, ${xy[1].toFixed(1)}px)`; };
 
   const start = performance.now();
   let frame = null;
@@ -376,32 +576,82 @@
     const t = reduced ? 40 : (now - start) / 1000;
     const dt = last == null ? 0 : Math.min(0.25, (now - last) / 1000); // slow devices skip ahead
     last = now;
-    if (!reduced && tourP !== tourGoal) {
-      tourP = tourGoal ? Math.min(1, tourP + dt / FLY) : Math.max(0, tourP - dt / FLY);
-      if (tourP === tourGoal) { if (tourP === 1) arrived(); else landed(); }
+    if (!reduced && tourT !== tourGoal) {
+      tourT = tourGoal ? Math.min(tourGoal, tourT + dt) : Math.max(0, tourT - dt * backRate);
+      if (tourT === 0) landed();
     }
+    showStage();
     const angle = t * SPIN;
-    const s = ease(tourP);
-    const cam = camera(s, angle);
-    gl.uniform1f(uAngle, angle);
-    gl.uniform3f(uCam, cam.eye[0], cam.eye[1], cam.eye[2]);
-    const { right: R, up: U, back: B } = cam;
-    gl.uniformMatrix3fv(uView, false, [R[0], U[0], B[0], R[1], U[1], B[1], R[2], U[2], B[2]]);
-    gl.uniform1f(uGain, 1.7 - 0.5 * s);
+    const s = ease(part(tourT, 0, FLY));
+    const d = ease(part(tourT, LEAVE_SUN, DIVE));
+    const galaxyFade = 1 - ease(part(d, 0.35, 0.55));
+    const solarFade = ease(part(d, 0.55, 0.45));
     gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.drawArrays(gl.POINTS, 0, n);
 
-    // Keep the Sun's marker on the Sun.
-    if (tourP > 0) {
-      const v = sub(cam.sun, cam.eye);
-      const vx = dot(v, R), vy = dot(v, U), w = -dot(v, B);
-      if (w > 0) {
-        const x = (vx * proj.fx / w + 1) / 2 * innerWidth;
-        const y = (1 - vy * proj.fy / w) / 2 * innerHeight;
-        marker.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
-      }
+    if (galaxyFade > 0) {
+      const cam = galaxyCamera(s, d, angle);
+      useGalaxy();
+      gl.uniform1f(uAngle, angle);
+      gl.uniform3f(uCam, cam.eye[0], cam.eye[1], cam.eye[2]);
+      gl.uniformMatrix3fv(uView, false, viewMatrix(cam));
+      gl.uniform1f(uGain, (1.7 - 0.5 * s) * galaxyFade);
+      gl.drawArrays(gl.POINTS, 0, n);
+      // Keep the Sun's marker on the Sun.
+      const xy = tourT > 0 && project(cam.sun, cam);
+      if (xy) place(sunMarker, xy);
     }
+
+    if (solarFade > 0 && solar.date) {
+      const cam = solarCamera(ease(part(tourT, IN_SYSTEM, ZOOM)), solarFade);
+      const view = viewMatrix(cam);
+      // The sky: the distant stars, seen from the middle of their sphere.
+      useGalaxy();
+      gl.uniform3f(uCam, 0, 0, 0);
+      gl.uniformMatrix3fv(uView, false, view);
+      gl.uniform1f(uGain, 1.2 * solarFade);
+      gl.drawArrays(gl.POINTS, n - STAR_POINTS, STAR_POINTS);
+      // Orbits, then the Sun and planets on top.
+      useSolar();
+      gl.uniform3f(sCam, cam.eye[0], cam.eye[1], cam.eye[2]);
+      gl.uniformMatrix3fv(sView, false, view);
+      gl.uniform2f(sProj, proj.fx, proj.fy);
+      gl.uniform1f(sDpr, proj.dpr);
+      gl.uniform1f(sFade, solarFade);
+      gl.uniform1f(sFlat, 1);
+      const bodies = 1 + PLANETS.length;
+      for (let i = 0; i < PLANETS.length; i++) gl.drawArrays(gl.LINE_LOOP, bodies + i * ORBIT_STEPS, ORBIT_STEPS);
+      gl.uniform1f(sFlat, 0);
+      gl.drawArrays(gl.POINTS, 0, bodies);
+      placeLabels(cam);
+      const xy = project(solar.bodies[3].pos, cam);
+      if (xy) place(earthMarker, xy);
+    }
+    labels.style.opacity = solarFade.toFixed(3);
     frame = reduced ? null : requestAnimationFrame(draw);
+  }
+
+  // The camera's axes as the shader's uView (column-major: its rows are right, up, back).
+  const viewMatrix = ({ right: R, up: U, back: B }) => [R[0], U[0], B[0], R[1], U[1], B[1], R[2], U[2], B[2]];
+
+  // Names beside the Sun and planets, the Sun's first, then from the outside in. A name is left out when its
+  // body is off screen, close to a body already named, or its text would touch another name or named body
+  // (so the inner planets get theirs as the camera comes near).
+  function placeLabels(cam) {
+    const dots = [], boxes = [];
+    for (const k of [8, 7, 6, 5, 4, 3, 2, 1, 0]) { // labelEls: the planets from Mercury, then the Sun
+      const { el, name } = labelEls[k];
+      const xy = project(solar.bodies[name === 'Sun' ? 0 : k + 1].pos, cam);
+      let clear = xy && xy[0] > -20 && xy[0] < innerWidth && xy[1] > 0 && xy[1] < innerHeight;
+      if (clear) {
+        const x = xy[0] + parseFloat(getComputedStyle(el).marginLeft), h = el.offsetHeight;
+        const box = [x, xy[1] - h / 2, x + el.offsetWidth, xy[1] + h / 2];
+        clear = box[2] < innerWidth - 4 && dots.every((p) => Math.hypot(p[0] - xy[0], p[1] - xy[1]) > 16 &&
+                  !(p[0] > box[0] - 6 && p[0] < box[2] + 6 && p[1] > box[1] - 6 && p[1] < box[3] + 6)) &&
+                boxes.every((o) => box[0] > o[2] + 4 || box[2] < o[0] - 4 || box[1] > o[3] || box[3] < o[1]);
+        if (clear) { dots.push(xy); boxes.push(box); place(el, xy); }
+      }
+      el.classList.toggle('is-off', !clear);
+    }
   }
 
   window.addEventListener('resize', () => {

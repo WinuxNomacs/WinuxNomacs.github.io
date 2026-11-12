@@ -2,8 +2,7 @@
 
 ## Phases (current and upcoming)
 
-- **Up next:** 1. Solar system with "You are here" (tour phase 3)
-- **Later:** 2. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
+- **Later:** 1. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
 
 ## Tour: from the galaxy to "You are here"
 
@@ -23,7 +22,7 @@ with a pointer on the Earth that says "You are here". Use real data where it exi
   (galaxy → the Sun's spot → solar system), not one continuous zoom. Planets are drawn larger than true scale,
   and labelled so.
 
-**Phases** (phases 1 and 2 are done, see below):
+**Phases** (phases 1–3 are done, see below):
 1. **Match the real Milky Way:** tune the generated galaxy's arms and bar to the measured layout, make the arms
    trail as the real ones do, add the Orion Spur, and fix the Sun's real position (used by phase 2, where it gets
    its marker). The landing page looks nearly the same.
@@ -44,6 +43,23 @@ with a pointer on the Earth that says "You are here". Use real data where it exi
 - **Planet positions:** live, for the visitor's date.
 
 ## Done
+
+### Tour phase 3: the solar system with "You are here"
+
+**Built** in `docs/main.js` (the solar system section with `PLANETS` and `solarProg`, and the tour section, now one
+timeline: fly 6 s, hold 1.5 s at the Sun, dive 3 s, zoom 6 s), `docs/index.html` (`#earth-marker`,
+`#planet-labels`, `#tour-note`; the markers share `.marker` classes) and `docs/style.css`. After the Sun's marker,
+the camera dives into the Sun while the galaxy fades out, and the solar system fades in from a wide view of all 8
+orbits, then eases in from above and outside the Earth's side, looking back at the Sun. The planets are at their
+real positions for the visitor's date (JPL Keplerian elements; checked against today's sky: the Earth at
+heliocentric longitude 49.7°, the Sun at 229.7° as seen from Earth, and against J2000). Names are shown where they
+fit without clashing; at the end "You are here — The Earth, <date>" marks the Earth, and a note says distances are
+to scale and planets drawn larger. Going back from any point takes 6 s. Under reduced motion it cuts to the Sun,
+then after 3 s to the Earth.
+**Checked** in headless Chromium (scratch `solar/walk.js`, `solar/check.js`): screenshots of every stage on desktop
+and phone; back by Esc from the Earth, by a click during the dive, by "← Back" at the Sun, each landing home with
+the focus on the head; status texts; markers, labels and note shown only at their stage; no overflow; reduced-motion
+cuts, including no late cut after going back early; no console errors.
 
 ### Tour phase 2: click the head to fly to the Sun
 

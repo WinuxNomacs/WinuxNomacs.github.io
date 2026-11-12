@@ -12,8 +12,11 @@ libraries. It is laid out like the real Milky Way as astronomers have measured i
 
 Clicking the head (or pressing Enter on it) starts a tour. The head and the quote fade away, the banner moves up to
 the top edge, and the camera flies through the galaxy to the Sun's real place in it, about 26,700 light-years from
-the centre, where a marker appears. "← Back", a click anywhere or Esc flies back. With "reduce motion" on, each
-step cuts straight to the next instead of flying.
+the centre, where a marker appears. Then it dives into the Sun, and the solar system fades in: the Sun, the eight
+planets and their orbits, with each planet where it really is on the visitor's date (worked out in the browser from
+NASA JPL's Keplerian elements). The camera eases in towards the Earth, marked "You are here". Distances are to
+scale; the planets are drawn larger. "← Back", a click anywhere or Esc flies back from any point. With "reduce
+motion" on, each step cuts straight to the next instead of flying.
 
 ## Files
 
@@ -21,7 +24,7 @@ Everything the site serves is in `docs/`:
 
 - `index.html`: the page
 - `style.css`: the layout, the float and the eye-glow animations
-- `main.js`: the mouse/tilt effect and the WebGL galaxy
+- `main.js`: the mouse/tilt effect, the WebGL galaxy, the solar system and the tour
 - `quotes.md`: the quotes, one per `- ` list line
 - `quotes.js`: shows the quotes
 - `assets/img/gargoyle-cutout-707.webp`, `gargoyle-cutout-1414.webp`: the head with its background cut out, at two

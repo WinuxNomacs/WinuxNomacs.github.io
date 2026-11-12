@@ -49,8 +49,19 @@
       shown.append(span);
     });
     el.replaceChildren(spoken, shown);
+    place();
     return Math.max(0, i - 1) * CHAR_MS + FADE_MS;
   }
+
+  // Tells each letter where it sits in the slot, so one band of light can sweep across them all (see style.css).
+  function place() {
+    const box = el.getBoundingClientRect();
+    el.style.setProperty('--qw', box.width.toFixed(1) + 'px');
+    for (const letter of el.querySelectorAll('.ch')) {
+      letter.style.setProperty('--x', (letter.getBoundingClientRect().left - box.left).toFixed(1) + 'px');
+    }
+  }
+  addEventListener('resize', place); // the lines may wrap differently
 
   async function run() {
     let quotes;

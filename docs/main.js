@@ -581,6 +581,7 @@
   const earthMarker = document.getElementById('earth-marker');
   const labels = document.getElementById('planet-labels');
   const note = document.getElementById('tour-note');
+  const noteText = document.getElementById('tour-note-text');
   const status = document.getElementById('tour-status');
   const bodyMarker = document.getElementById('body-marker');
   const zoomBox = document.getElementById('zoom');
@@ -697,7 +698,7 @@
     earthText = `You are here: the Earth, ${distance}, with the Sun and the planets where they are on ${day}.`;
     document.getElementById('earth-date').textContent = `The Earth, ${day}`;
     document.getElementById('earth-distance').replaceChildren(...spans(parts));
-    note.textContent = `The planets where they are on ${day}. Distances to scale; planets drawn larger. ` +
+    noteText.textContent = `The planets where they are on ${day}. Distances to scale; planets drawn larger. ` +
                        'Pick one, or the Sun, to see its distance.';
   }
 

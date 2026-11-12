@@ -22,6 +22,7 @@ A static GitHub Pages site (<https://winuxnomacs.github.io/>): one page, plain H
   jaw/neck shadow. `gargoyle-707.jpg` (black background) is the favicon.
 - **Galaxy:** `main.js` generates the points with a fixed seed, so every visit looks the same. Its shape and
   look are set by the constants at the top of the galaxy section (`TILT`, `ROLL`, `SPIN`, the point counts) and
-  the `uGain` brightness. Headless Chromium renders it in software at about 30 fps, so judge speed on a real GPU.
+  the `uGain` brightness. The arms, the bar and `SUN` follow the measured Milky Way (1 unit = 1.36 kpc; the comments
+  give the sources' numbers), so keep them consistent if the layout changes: the tour flies to `SUN`. Headless Chromium renders it in software at about 30 fps, so judge speed on a real GPU.
 - **Eye glow position:** the glow is placed at the lit eye, which sits at 53.0% / 32.8% of the image.
   If the image changes, measure the eye again.

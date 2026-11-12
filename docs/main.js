@@ -44,8 +44,12 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Spiral galaxy: tens of thousands of glowing points drawn with WebGL, turning slowly
+  // The Milky Way: tens of thousands of glowing points drawn with WebGL, turning slowly
   // behind the head. Seen tilted (about 30° above the disc) and slightly rolled.
+  // Its layout follows the measured one (1 unit = 1.36 kpc, about 4,400 light-years): a bar about 4.6 kpc
+  // long from centre to end, two major arms (Scutum–Centaurus, Perseus) from its ends, two minor ones
+  // (Sagittarius, Norma) between them, 12° pitch, all trailing the rotation, and the Sun 8.2 kpc out
+  // in the Orion Spur, 27° from the bar's near end.
   // ---------------------------------------------------------------------------
   const canvas = document.getElementById('space');
   const gl = canvas.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'low-power' });
@@ -55,7 +59,10 @@
   const ROLL = -0.28;       // radians of roll, so the disc runs diagonally
   const SPIN = 0.024;       // radians per second (one turn in about 4.4 minutes)
   const DIST = 24;          // camera distance from the galaxy's centre
-  const RADIUS = 11;        // galaxy radius in the same units
+  const RADIUS = 11;        // galaxy radius in the same units (15 kpc)
+  // The Sun, in the disc's own coordinates before it turns: radius, angle (the galaxy turns towards +angle),
+  // height above the mid-plane (about 20 pc). The tour flies here.
+  const SUN = { r: 6.0, angle: -0.471, y: 0.015 };
 
   // Deterministic random numbers, so the galaxy looks the same on every visit.
   let seed = 20261112;
@@ -91,22 +98,29 @@
     buf[o + 6] = size; buf[o + 7] = spins;
   };
 
-  // Logarithmic spiral arms starting from the ends of a central bar: two major arms, two minor.
+  // Logarithmic spiral arms starting from the ends of the bar (which lies along +x, near end at angle 0),
+  // winding back against the rotation. With these numbers the arms cross the Sun's line at the measured
+  // radii: Scutum–Centaurus 5.1 kpc, Sagittarius 7.1, Perseus 10.0. The Orion Spur is drawn separately.
   const ARMS = [
-    { base: 0, weight: 0.36 },
-    { base: Math.PI, weight: 0.36 },
-    { base: Math.PI / 2, weight: 0.14 },
-    { base: Math.PI * 1.5, weight: 0.14 },
+    { base: 0, weight: 0.35 },           // Scutum–Centaurus
+    { base: Math.PI, weight: 0.35 },     // Perseus
+    { base: Math.PI / 2, weight: 0.13 }, // Sagittarius
+    { base: Math.PI * 1.5, weight: 0.13 }, // Norma
   ];
-  const WIND = 1 / Math.tan((13 * Math.PI) / 180); // 13° pitch angle
-  const BAR = 1.8;
+  const SPUR = 0.02; // share of arm stars in the Orion Spur
+  const WIND = 1 / Math.tan((12 * Math.PI) / 180); // 12° pitch angle
+  const BAR = 3.4;
 
   for (let i = 0; i < GALAXY_POINTS; i++) {
     const kind = rand();
-    if (kind < 0.16) {
-      // Bulge and bar: warm, dense, elongated along x.
-      const x = gauss() * 1.35, z = gauss() * 0.55, y = gauss() * 0.42;
+    if (kind < 0.08) {
+      // Bulge: warm, dense, nearly round.
+      const x = gauss() * 1.0, z = gauss() * 0.8, y = gauss() * 0.45;
       put(x, y, z, WARM, 0.32 + rand() * 0.35, 1.1 + rand() * 1.3, 1);
+    } else if (kind < 0.16) {
+      // Bar: warm, long and thin along x.
+      const x = gauss() * 1.7, z = gauss() * 0.45, y = gauss() * 0.3;
+      put(x, y, z, WARM, 0.3 + rand() * 0.3, 1.0 + rand() * 1.2, 1);
     } else if (kind < 0.40) {
       // Diffuse disc between the arms.
       const r = Math.min(RADIUS, -Math.log(1 - rand() * 0.985) * 3.2 + 0.6);
@@ -114,12 +128,20 @@
       const y = gauss() * 0.12 * (1 + r / RADIUS);
       put(Math.cos(a) * r, y, Math.sin(a) * r, mix(WARM, BLUE, Math.min(1, r / 7)), 0.16 + rand() * 0.24, 0.9 + rand() * 1.0, 1);
     } else {
-      // Arm stars.
-      let pick = rand(), arm = ARMS[0];
-      for (const A of ARMS) { if ((pick -= A.weight) <= 0) { arm = A; break; } }
-      const r = BAR + Math.min(RADIUS - BAR, -Math.log(1 - rand() * 0.99) * 2.6);
-      const theta = arm.base + WIND * Math.log(r / BAR) + gauss() * (0.1 + 0.35 / r);
-      const spread = gauss() * 0.2 * (0.6 + r / RADIUS);
+      // Arm stars, or the Orion Spur: a short, fainter arm piece through the Sun, about 4 kpc long.
+      let pick = rand() - SPUR, r, theta, spread;
+      if (pick < 0) {
+        const along = (rand() - 0.5) * 0.6;
+        theta = SUN.angle + along;
+        r = SUN.r * Math.exp(-along * Math.tan((11 * Math.PI) / 180));
+        spread = gauss() * 0.22;
+      } else {
+        let arm = ARMS[0];
+        for (const A of ARMS) { if ((pick -= A.weight) <= 0) { arm = A; break; } }
+        r = BAR + Math.min(RADIUS - BAR, -Math.log(1 - rand() * 0.99) * 2.6);
+        theta = arm.base - WIND * Math.log(r / BAR) + gauss() * (0.1 + 0.35 / r);
+        spread = gauss() * 0.2 * (0.6 + r / RADIUS);
+      }
       const x = Math.cos(theta) * r + Math.cos(theta + Math.PI / 2) * spread;
       const z = Math.sin(theta) * r + Math.sin(theta + Math.PI / 2) * spread;
       const y = gauss() * 0.1 * (1 + r / RADIUS);

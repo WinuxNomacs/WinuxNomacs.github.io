@@ -2,9 +2,9 @@
 
 ## Phases (current and upcoming)
 
-- **Up next:** 1. Match the real Milky Way
-- **Then:** 2. Click the head to fly to the Sun; 3. Solar system with "You are here"
-- **Later:** 4. Nearest real stars between the galaxy and the solar system (optional)
+- **Up next:** 1. Click the head to fly to the Sun (tour phase 2)
+- **Then:** 2. Solar system with "You are here" (tour phase 3)
+- **Later:** 3. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
 
 ## Tour: from the galaxy to "You are here"
 
@@ -24,7 +24,7 @@ with a pointer on the Earth that says "You are here". Use real data where it exi
   (galaxy → the Sun's spot → solar system), not one continuous zoom. Planets are drawn larger than true scale,
   and labelled so.
 
-**Phases:**
+**Phases** (phase 1 is done, see below):
 1. **Match the real Milky Way:** tune the generated galaxy's arms and bar to the measured layout, make the arms
    trail as the real ones do, add the Orion Spur, and fix the Sun's real position (used by phase 2, where it gets
    its marker). The landing page looks nearly the same.
@@ -45,6 +45,16 @@ with a pointer on the Earth that says "You are here". Use real data where it exi
 - **Planet positions:** live, for the visitor's date.
 
 ## Done
+
+### Tour phase 1: match the real Milky Way
+
+**Built** in `docs/main.js` (galaxy section): 1 unit = 1.36 kpc; bar along +x, about 4.6 kpc from centre to
+end (round bulge plus a long thin bar); arms at 12° pitch from the bar's ends, now trailing the rotation; their
+crossings of the Sun's line match the measured radii (Scutum–Centaurus 5.1 kpc, Sagittarius 7.1, Perseus 10.0);
+an Orion Spur through the Sun; `SUN` = radius 6.0 units (8.2 kpc), angle −27° from the bar's near end, 20 pc
+above the plane. The Sun's marker comes with phase 2. Checked in headless Chromium with scratch scripts: a
+top-down view with a debug dot at `SUN` (between Sagittarius and Perseus, in the spur), the landing page before
+and after (nearly the same look), phone size, the galaxy still under reduced motion, no console errors.
 
 ### Banner link, larger and bolder text, quotes typed in
 

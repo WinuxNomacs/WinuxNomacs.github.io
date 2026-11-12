@@ -7,7 +7,8 @@ phone's tilt, where the browser allows it) while the galaxy shifts behind it for
 on "reduce motion" in their system settings get a still picture.
 
 The galaxy is drawn with WebGL from about 110,000 generated points (fewer on phones). It uses no images and no
-libraries. Without WebGL, the head floats on plain black.
+libraries. It is laid out like the real Milky Way as astronomers have measured it: the bar, the two major arms
+(Scutum–Centaurus and Perseus), the two minor ones (Sagittarius and Norma) and the Orion Spur, where the Sun is. Without WebGL, the head floats on plain black.
 
 ## Files
 

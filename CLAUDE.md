@@ -49,5 +49,13 @@ A static GitHub Pages site (<https://winuxnomacs.github.io/>): one page, plain H
 - **Head pulse:** once the head is a button it beats (`heartbeat` on `.tilt`'s `scale`, `aura` on `.tilt::before`,
   `eye-beat` on the eye glow, 2.9 s), stopping on hover, focus and touring. The aura is a blackened copy of
   `gargoyle-cutout-707.webp` with a gold drop-shadow; if the image changes, update its URL and edge fade there.
+- **The Earth up close:** `main.js` (the globe section) draws the Earth and the Moon as textured spheres
+  (`globeProg`, plus `airProg` for the Earth's glow) at true size and place, in AU like the solar system but each
+  in units of its own radius relative to the camera (`uRel`), so floats stay precise. `earthAxes()` turns the Earth
+  by Greenwich sidereal time; `moonPlace()` is the Astronomical Almanac's low-precision Moon. The tour section's
+  `visit` (0..`EARTH_DIVE` s) runs the dive: `diveCamera()` carries on from the solar camera and ends over the
+  visitor's time zone, then circles (`visit.turn`). The images (`assets/img/earth-*.webp`, `moon.webp`, made by
+  `tools/make-earth-images.js`) load when the tour reaches the Earth. "← Back" and Esc from there go back to the
+  solar system (`leaveEarth()`).
 - **Eye glow position:** the glow is placed at the lit eye, which sits at 53.0% / 32.8% of the image.
   If the image changes, measure the eye again.

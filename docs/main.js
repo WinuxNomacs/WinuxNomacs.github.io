@@ -294,6 +294,7 @@
       [0.00026291, 0.00005105, 0.00035372, 218.45945325, -0.32241464, -0.00508664]],
   ];
   const RAD = Math.PI / 180;
+  const KM_PER_AU = 149597870.7, KM_PER_MILE = 1.609344;
   const ORBIT_STEPS = 160;
   const SOLAR_STRIDE = 7; // x, y, z, r, g, b, size
 
@@ -549,6 +550,231 @@
   }
 
   // ---------------------------------------------------------------------------
+  // The Earth up close, and the Moon: textured spheres at their true sizes and places, lit from the Sun. The Earth
+  // is turned as it is at this moment (Greenwich sidereal time) on its tilted axis, so day and night fall where
+  // they really are: NASA's Blue Marble by day, Black Marble city lights by night, a cloud layer and a glow of air
+  // round the edge. The Moon is where it is now (a short lunar theory, good to a fraction of a degree), its near
+  // side towards the Earth. Units are AU as in the solar system, but each sphere is drawn in units of its own radius
+  // relative to the camera, so the numbers stay precise this close in. The images load once the tour reaches the
+  // Earth.
+  // ---------------------------------------------------------------------------
+  const EARTH_RADIUS = 6371 / KM_PER_AU, MOON_RADIUS = 1737.4 / KM_PER_AU;
+  const GLOBE_FILL = 0.62; // the globe's radius at the end of the dive, as a share of the screen's narrower half
+
+  // A sphere of unit radius: x towards latitude 0° longitude 0°, y towards 0° 90°E, z towards the North Pole, with
+  // the image coordinates of an equirectangular map (the seam's column is doubled so the map wraps cleanly).
+  function sphereMesh(seg, rings) {
+    const verts = [], idx = [];
+    for (let j = 0; j <= rings; j++) {
+      const lat = Math.PI / 2 - (j / rings) * Math.PI;
+      for (let i = 0; i <= seg; i++) {
+        const lon = -Math.PI + (i / seg) * 2 * Math.PI;
+        verts.push(Math.cos(lat) * Math.cos(lon), Math.cos(lat) * Math.sin(lon), Math.sin(lat), i / seg, j / rings);
+      }
+    }
+    // Counter-clockwise seen from outside, so the far side can be culled.
+    for (let j = 0; j < rings; j++) {
+      for (let i = 0; i < seg; i++) {
+        const a = j * (seg + 1) + i, b = a + 1, c = a + seg + 1, d = c + 1;
+        idx.push(a, c, b, b, c, d);
+      }
+    }
+    return { verts: new Float32Array(verts), idx: new Uint16Array(idx) };
+  }
+  const sphere = sphereMesh(96, 48);
+  const sphereBuf = gl.createBuffer(), sphereIdx = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, sphereBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, sphere.verts, gl.STATIC_DRAW);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sphereIdx);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, sphere.idx, gl.STATIC_DRAW);
+
+  const SPHERE_VERT = `
+    attribute vec3 aPos;   // on the unit sphere, in the body's own axes
+    attribute vec2 aUv;
+    uniform mat3 uModel;   // the body's axes in the drawing's
+    uniform vec3 uRel;     // the body's centre relative to the camera, in body radii
+    uniform mediump float uShell;  // 1 for the surface, a little more for the air (same precision as AIR_FRAG's)
+    uniform mat3 uView;
+    uniform vec2 uProj;
+    varying vec3 vNormal;
+    varying vec3 vToCam;
+    varying vec2 vUv;
+    void main() {
+      vec3 n = uModel * aPos;
+      vec3 p = uRel + uShell * n;  // relative to the camera; the projection doesn't mind the units
+      vec3 v = uView * p;
+      gl_Position = vec4(v.x * uProj.x, v.y * uProj.y, 0.0, -v.z);
+      vNormal = n;
+      vToCam = -p;
+      vUv = aUv;
+    }`;
+  const SPHERE_FRAG = `
+    precision mediump float;
+    uniform sampler2D uDay;
+    uniform sampler2D uNight;
+    uniform sampler2D uClouds;
+    uniform vec3 uSun;      // towards the Sun
+    uniform float uEarth;   // 1 for the Earth (lights, clouds, glint, air), 0 for the Moon
+    uniform float uFade;
+    varying vec3 vNormal;
+    varying vec3 vToCam;
+    varying vec2 vUv;
+    void main() {
+      vec3 n = normalize(vNormal), v = normalize(vToCam);
+      float ndl = dot(n, uSun), light = max(ndl, 0.0);
+      vec3 day = texture2D(uDay, vUv).rgb;
+      if (uEarth < 0.5) {
+        // The Moon: sunlit, with a trace of earthshine on its dark side.
+        gl_FragColor = vec4(day * (light * 1.15 + 0.02) * uFade, 1.0);
+        return;
+      }
+      float cloud = texture2D(uClouds, vUv).r * 0.9;
+      vec3 col = day * light * 1.2;
+      // Sunlight glints on open water (the map's oceans are a flat deep blue).
+      float ocean = smoothstep(0.05, 0.12, day.b - max(day.r, day.g));
+      float glint = pow(max(dot(reflect(-uSun, n), v), 0.0), 60.0) * ocean * (1.0 - cloud) * step(0.0, ndl);
+      col += vec3(1.0, 0.95, 0.85) * glint * 0.7;
+      col = mix(col, vec3(light * 1.15), cloud);
+      // The night image (city lights over dim land and sea), dimmed under cloud. It fades in while daylight fades
+      // out, so there's no dark gap between them; a faint warm band runs along the line between day and night.
+      float night = 1.0 - smoothstep(-0.02, 0.22, ndl);
+      col += texture2D(uNight, vUv).rgb * vec3(1.0, 0.85, 0.6) * 1.4 * night * (1.0 - 0.7 * cloud);
+      col += vec3(1.0, 0.55, 0.3) * exp(-ndl * ndl * 600.0) * 0.03;
+      // Air towards the edge, blue where the Sun lights it.
+      float rim = pow(1.0 - max(dot(n, v), 0.0), 3.0);
+      col += vec3(0.3, 0.55, 1.0) * rim * (0.08 + 0.9 * smoothstep(-0.2, 0.4, ndl)) * 0.6;
+      gl_FragColor = vec4(col * uFade, 1.0);
+    }`;
+  // The air: the back of a slightly larger shell, brightest where a sight line skims the surface, fading to
+  // nothing at the shell's edge.
+  const AIR_FRAG = `
+    precision mediump float;
+    uniform vec3 uSun;
+    uniform float uShell;
+    uniform float uFade;
+    varying vec3 vNormal;
+    varying vec3 vToCam;
+    void main() {
+      vec3 n = normalize(vNormal);
+      float h = length(cross(n * uShell, normalize(vToCam))); // the sight line's closest pass to the centre
+      float a = clamp((uShell - h) / (uShell - 1.0), 0.0, 1.0);
+      float sun = 0.1 + 0.9 * smoothstep(-0.25, 0.45, dot(n, uSun));
+      gl_FragColor = vec4(vec3(0.35, 0.6, 1.0) * a * a * sun * 0.9 * uFade, 1.0);
+    }`;
+  const AIR_SHELL = 1.06;
+  const globeProg = link(SPHERE_VERT, SPHERE_FRAG, ['aPos', 'aUv']);
+  const airProg = link(SPHERE_VERT, AIR_FRAG, ['aPos', 'aUv']);
+  const uniforms = (p, names) => Object.fromEntries(names.map((k) => [k, gl.getUniformLocation(p, k)]));
+  const SPHERE_UNIFORMS = ['uModel', 'uRel', 'uShell', 'uView', 'uProj', 'uSun', 'uFade'];
+  const gu = uniforms(globeProg, [...SPHERE_UNIFORMS, 'uEarth', 'uDay', 'uNight', 'uClouds']);
+  const au = uniforms(airProg, SPHERE_UNIFORMS);
+  gl.useProgram(globeProg);
+  gl.uniform1i(gu.uDay, 0);
+  gl.uniform1i(gu.uNight, 1);
+  gl.uniform1i(gu.uClouds, 2);
+
+  const globe = { loading: false, ready: false, tex: {} };
+  function loadGlobe() {
+    if (globe.loading) return;
+    globe.loading = true;
+    const files = { day: 'earth-day', night: 'earth-night', clouds: 'earth-clouds', moon: 'moon' };
+    Promise.all(Object.entries(files).map(([key, file]) => new Promise((ok, fail) => {
+      const img = new Image();
+      img.onload = () => ok([key, img]);
+      img.onerror = fail;
+      img.src = `assets/img/${file}.webp`;
+    }))).then((list) => {
+      for (const [key, img] of list) {
+        const t = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, t);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img);
+        gl.generateMipmap(gl.TEXTURE_2D);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        globe.tex[key] = t;
+      }
+      globe.ready = true;
+    }, () => {}); // no images: the Earth can't be visited, and its dot behaves as before
+  }
+
+  const daysSinceJ2000 = (date) => date.getTime() / 86400000 + 2440587.5 - 2451545;
+  // The Earth's axes in the drawing's at this moment: towards 0° 0°, towards 0° 90°E, towards the North Pole.
+  function earthAxes(date) {
+    const gmst = (280.46061837 + 360.98564736629 * daysSinceJ2000(date)) * RAD;
+    const c = Math.cos(gmst), s = Math.sin(gmst);
+    return [fromEquatorial([c, s, 0]), fromEquatorial([-s, c, 0]), fromEquatorial([0, 0, 1])];
+  }
+  // Where the Moon is from the Earth now (the Astronomical Almanac's low-precision formulae): its direction in the
+  // drawing's axes, its distance in AU and km.
+  function moonPlace(date) {
+    const T = daysSinceJ2000(date) / 36525;
+    const S = (a, b) => Math.sin((a + b * T) * RAD), C = (a, b) => Math.cos((a + b * T) * RAD);
+    const lon = (218.32 + 481267.881 * T + 6.29 * S(135.0, 477198.87) - 1.27 * S(259.3, -413335.36) +
+                 0.66 * S(235.7, 890534.22) + 0.21 * S(269.9, 954397.74) - 0.19 * S(357.5, 35999.05) -
+                 0.11 * S(186.5, 966404.03)) * RAD;
+    const lat = (5.13 * S(93.3, 483202.02) + 0.28 * S(228.2, 960400.89) - 0.28 * S(318.3, 6003.15) -
+                 0.17 * S(217.6, -407332.21)) * RAD;
+    const parallax = (0.9508 + 0.0518 * C(135.0, 477198.87) + 0.0095 * C(259.3, -413335.36) +
+                      0.0078 * C(235.7, 890534.22) + 0.0028 * C(269.9, 954397.74)) * RAD;
+    const dist = EARTH_RADIUS / Math.sin(parallax);
+    return { dir: fromEcliptic([Math.cos(lat) * Math.cos(lon), Math.cos(lat) * Math.sin(lon), Math.sin(lat)]),
+             dist, km: dist * KM_PER_AU };
+  }
+  // The Moon keeps its near side (the map's longitude 0°) towards the Earth, its north up.
+  function moonAxes(dir) {
+    const x = dir.map((v) => -v);
+    const z = norm(sub([0, 1, 0], x.map((v) => v * x[1])));
+    return [x, cross(z, x), z];
+  }
+
+  // Draws the Earth (with its air) and the Moon for the camera, the farther one first; fade (0..1) as they appear.
+  // Returns the Moon's place, for its marker.
+  function drawGlobe(cam, view, axes, fade, date) {
+    const E = solar.bodies[3].pos, sun = norm(E.map((v) => -v));
+    const moon = moonPlace(date);
+    const M = E.map((e, i) => e + moon.dir[i] * moon.dist);
+    const bodies = [{ c: E, r: EARTH_RADIUS, axes, earth: true }, { c: M, r: MOON_RADIUS, axes: moonAxes(moon.dir) }]
+      .sort((a, b) => Math.hypot(...sub(b.c, cam.eye)) - Math.hypot(...sub(a.c, cam.eye)));
+    const set = (u, b, shell) => {
+      gl.uniformMatrix3fv(u.uModel, false, b.axes.flat());
+      const rel = sub(b.c, cam.eye).map((v) => v / b.r);
+      gl.uniform3f(u.uRel, rel[0], rel[1], rel[2]);
+      gl.uniform1f(u.uShell, shell);
+      gl.uniformMatrix3fv(u.uView, false, view);
+      gl.uniform2f(u.uProj, proj.fx, proj.fy);
+      gl.uniform3f(u.uSun, sun[0], sun[1], sun[2]);
+      gl.uniform1f(u.uFade, fade);
+    };
+    gl.enable(gl.CULL_FACE);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sphereIdx);
+    for (const b of bodies) {
+      if (b.earth) {
+        use(airProg, sphereBuf, 5, [[3, 0], [2, 3]]);
+        set(au, b, AIR_SHELL);
+        gl.cullFace(gl.FRONT);
+        gl.drawElements(gl.TRIANGLES, sphere.idx.length, gl.UNSIGNED_SHORT, 0);
+      }
+      use(globeProg, sphereBuf, 5, [[3, 0], [2, 3]]);
+      set(gu, b, 1);
+      gl.uniform1f(gu.uEarth, b.earth ? 1 : 0);
+      [b.earth ? globe.tex.day : globe.tex.moon, globe.tex.night, globe.tex.clouds].forEach((t, i) => {
+        gl.activeTexture(gl.TEXTURE0 + i);
+        gl.bindTexture(gl.TEXTURE_2D, t);
+      });
+      gl.activeTexture(gl.TEXTURE0);
+      gl.cullFace(gl.BACK);
+      gl.disable(gl.BLEND); // solid: it hides the stars behind it
+      gl.drawElements(gl.TRIANGLES, sphere.idx.length, gl.UNSIGNED_SHORT, 0);
+      gl.enable(gl.BLEND);
+    }
+    gl.disable(gl.CULL_FACE);
+    // How much of the Moon is lit: half the cosine of the Sun–Moon–Earth angle, plus a half.
+    return { pos: M, km: moon.km, lit: (1 + dot(sun, moon.dir.map((v) => -v))) / 2 };
+  }
+
+  // ---------------------------------------------------------------------------
   // The tour: clicking the head flies the camera through the galaxy to the Sun's place in it, dives into the
   // Sun, crossfades to the solar system and eases in towards the Earth: "You are here".
   // ---------------------------------------------------------------------------
@@ -571,6 +797,11 @@
   const ORBIT_SPEED = 0.026;
   const orbit = { angle: 0, rate: 0 };
   const zoom = { z: 1, target: 1 };
+  // Visiting the Earth up close: t runs 0..EARTH_DIVE seconds into the globe and back out; there the camera circles
+  // it (turn, at rate), starting over the visitor's time zone (lon, Earth longitude in radians).
+  const EARTH_DIVE = 5;
+  const GLOBE_SPEED = 0.03; // radians per second
+  const visit = { t: 0, goal: 0, turn: 0, rate: 0, lon: 0 };
   let selected = null; // the picked body (index into solar.bodies), or null
   let bodyXY = [];     // where each body is on screen, for picking by click
   const head = document.getElementById('head');
@@ -586,6 +817,9 @@
   const bodyMarker = document.getElementById('body-marker');
   const zoomBox = document.getElementById('zoom');
   const zoomIn = document.getElementById('zoom-in'), zoomOut = document.getElementById('zoom-out');
+  const earthDive = document.getElementById('earth-dive');
+  const moonMarker = document.getElementById('moon-marker');
+  const globeCaption = document.getElementById('globe-caption');
   let tourT = 0;    // seconds along the tour: 0 = landing page, AT_EARTH = "You are here"
   let tourGoal = 0; // 0 or AT_EARTH
   let backRate = 1; // the way back always takes FLY seconds, however far the tour got
@@ -612,7 +846,7 @@
   function lookAt(eye, look, upHint) {
     const back3 = norm(sub(eye, look));
     const right = norm(cross(upHint, back3));
-    return { eye, right, up: cross(back3, right), back: back3 };
+    return { eye, look, right, up: cross(back3, right), back: back3 };
   }
   // Where a point lands on screen in CSS pixels, or null when it is behind the camera.
   function project(p, cam) {
@@ -661,6 +895,51 @@
     return lookAt(eye, look, [0, 1, 0]);
   }
 
+  // Turns direction a towards b by t (0..1) along the great circle between them.
+  function slerp(a, b, t) {
+    const w = Math.acos(Math.max(-1, Math.min(1, dot(a, b))));
+    if (w < 1e-5) return b;
+    if (Math.PI - w < 1e-3) { // opposite: by way of a direction square to both
+      const m = norm(cross(a, Math.abs(a[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0]));
+      return t < 0.5 ? slerp(a, m, t * 2) : slerp(m, b, t * 2 - 1);
+    }
+    const ka = Math.sin((1 - t) * w) / Math.sin(w), kb = Math.sin(t * w) / Math.sin(w);
+    return [0, 1, 2].map((i) => a[i] * ka + b[i] * kb);
+  }
+
+  // From the solar system camera (base) on into the Earth, for dive progress p (0..1): it turns to the Earth and
+  // closes in until the globe fills GLOBE_FILL of the screen, ending over the visitor's time zone, 25° north, with
+  // north up. There it circles (visit.turn) westward over the ground, so the Earth seems to turn the way it does.
+  function diveCamera(base, p, axes) {
+    const E = solar.bodies[3].pos;
+    const lon = visit.lon - visit.turn, lat = 25 * RAD;
+    const f = [Math.cos(lat) * Math.cos(lon), Math.cos(lat) * Math.sin(lon), Math.sin(lat)];
+    const end = norm([0, 1, 2].map((i) => axes[0][i] * f[0] + axes[1][i] * f[1] + axes[2][i] * f[2]));
+    const off = sub(base.eye, E);
+    const near = (EARTH_RADIUS * Math.max(proj.fx, proj.fy)) / GLOBE_FILL;
+    const dir = slerp(norm(off), end, ease(Math.min(1, p * 1.2)));
+    const eye = E.map((e, i) => e + dir[i] * logLerp(Math.hypot(...off), near, p));
+    const look = lerp3(base.look, E, ease(Math.min(1, p * 2.5)));
+    return lookAt(eye, look, norm(lerp3([0, 1, 0], axes[2], ease(p))));
+  }
+
+  // The Moon's marker: shown at the Earth up close while the Moon is on screen and not behind the Earth.
+  function placeMoonMarker(m, cam) {
+    const toE = sub(solar.bodies[3].pos, cam.eye), toM = sub(m.pos, cam.eye);
+    const behind = Math.hypot(...toM) > Math.hypot(...toE) &&
+      Math.acos(Math.min(1, dot(norm(toE), norm(toM)))) < Math.asin(Math.min(1, EARTH_RADIUS / Math.hypot(...toE)));
+    const xy = atGlobe() && !behind && project(m.pos, cam);
+    const on = !!xy && xy[0] > 0 && xy[0] < innerWidth && xy[1] > 0 && xy[1] < innerHeight;
+    moonMarker.classList.toggle('is-shown', on);
+    if (!on) return;
+    place(moonMarker, xy);
+    fitLabel(moonMarker, xy);
+    const round = (n) => (Math.round(n / 100) * 100).toLocaleString('en-GB');
+    const info = `${round(m.km / KM_PER_MILE)} miles (${round(m.km)} km) away, ${Math.round(m.lit * 100)}% lit`;
+    const el = document.getElementById('moon-info');
+    if (el.textContent !== info) el.textContent = info;
+  }
+
   // Lifts the banner to the top edge while touring (offsetTop ignores the lift itself).
   function measureBanner() {
     document.body.style.setProperty('--lift', (12 - banner.offsetTop) + 'px');
@@ -680,7 +959,6 @@
     return { name, el, body };
   });
 
-  const KM_PER_AU = 149597870.7, KM_PER_MILE = 1.609344;
   let sunText = '', earthText = '', bodyText = '';
   // A body's distance from the Sun for the day, from its position (in AU): "X million miles", "(Y million km) from
   // the Sun", in two parts so phones can put them on two lines.
@@ -726,8 +1004,30 @@
     zoomOut.setAttribute('aria-disabled', String(zoom.target <= 0));
     redraw();
   }
-  // At the Earth, once the tour has arrived: zooming and picking work.
-  const exploring = () => tourGoal > 0 && tourT >= AT_EARTH;
+  // At the Earth, once the tour has arrived (and not visiting it up close): zooming and picking work.
+  const diving = () => visit.goal > 0 || visit.t > 0;
+  const atGlobe = () => visit.goal > 0 && visit.t === EARTH_DIVE;
+  const exploring = () => tourGoal > 0 && tourT >= AT_EARTH && !diving();
+
+  // Flies on into the Earth, from any zoom; the images must have arrived.
+  function visitEarth() {
+    if (!exploring() || !globe.ready) return;
+    select(null);
+    setZoom(1);
+    // Start over the visitor's time zone (15° of longitude an hour), 25° north.
+    visit.lon = (-new Date().getTimezoneOffset() / 4) * RAD;
+    visit.turn = visit.rate = 0;
+    visit.goal = 1;
+    back.focus({ preventScroll: true });
+    if (reduced) { visit.t = EARTH_DIVE; draw(0); } else kick();
+  }
+  // Back out to the solar system at the Earth.
+  function leaveEarth() {
+    if (!visit.goal) return;
+    visit.goal = 0;
+    if (reduced) { visit.t = 0; draw(0); } else kick();
+  }
+  let globeText = '';
   // Under reduced motion nothing draws on its own, so changes draw once.
   const redraw = () => { if (reduced) draw(0); };
 
@@ -735,16 +1035,30 @@
   function showStage() {
     const atSun = tourGoal > 0 && tourT >= AT_SUN && tourT < LEAVE_SUN;
     const atEarth = tourT >= AT_EARTH;
+    const close = diving(), globeView = atGlobe();
     sunMarker.classList.toggle('is-shown', atSun);
-    earthMarker.classList.toggle('is-shown', atEarth);
+    earthMarker.classList.toggle('is-shown', atEarth && !close);
     earthMarker.classList.toggle('is-compact', selected !== null); // just "You are here" while another is picked
+    earthMarker.inert = !exploring();
     bodyMarker.classList.toggle('is-shown', atEarth && selected !== null);
     zoomBox.classList.toggle('is-shown', exploring());
     labels.inert = !exploring();
     note.classList.toggle('is-shown', tourGoal > 0 && tourT >= IN_SYSTEM);
+    note.classList.toggle('is-globe', close);
+    globeCaption.classList.toggle('is-shown', globeView);
+    if (exploring()) loadGlobe(); // the Earth's images, ready for a visit
+    if (globeView) {
+      const time = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      if (globeCaption.dataset.time !== time) {
+        globeCaption.dataset.time = time;
+        document.getElementById('globe-time').textContent = `Day and night as they are at ${time} your time`;
+        globeText = `The Earth now, with day and night as they are at ${time} your time.`;
+      }
+    }
     // "You are here" replaces the Earth's name, and the picked body's marker its own.
     for (const { el, body } of labelEls) el.classList.toggle('is-hidden', atEarth && (body === 3 || body === selected));
-    const text = atEarth ? (selected !== null ? bodyText : earthText) : atSun ? sunText : '';
+    const text = globeView ? globeText : close ? '' :
+                 atEarth ? (selected !== null ? bodyText : earthText) : atSun ? sunText : '';
     if (status.textContent !== text) status.textContent = text;
   }
 
@@ -764,6 +1078,7 @@
     zoom.z = 1;
     setZoom(1);
     orbit.angle = orbit.rate = 0;
+    visit.t = visit.goal = 0;
     tourGoal = AT_EARTH;
     document.body.classList.add('touring');
     head.inert = true;
@@ -773,6 +1088,8 @@
   }
   function goBack() {
     if (!tourGoal) return;
+    // From the Earth up close, one step: back out to the solar system.
+    if (diving()) { leaveEarth(); return; }
     tourGoal = 0;
     select(null);
     backRate = Math.max(1, tourT / FLY);
@@ -813,8 +1130,10 @@
       const gap = xy ? Math.hypot(xy[0] - e.clientX, xy[1] - e.clientY) - (i === 0 ? 10 : 0) : Infinity;
       if (gap < bestGap) { best = i; bestGap = gap; }
     });
-    if (best !== null) select(best);
+    if (best === 3 && globe.ready) visitEarth();
+    else if (best !== null) select(best);
   });
+  earthDive.addEventListener('click', visitEarth);
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') goBack();
     else if (exploring() && (e.key === '+' || e.key === '=')) setZoom(zoom.target + ZOOM_STEP);
@@ -866,6 +1185,7 @@
     const d = ease(part(tourT, LEAVE_SUN, DIVE));
     const galaxyFade = 1 - ease(part(d, 0.35, 0.55));
     const solarFade = ease(part(d, 0.55, 0.45));
+    let solarDim = 1;
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     if (galaxyFade > 0) {
@@ -888,29 +1208,50 @@
         orbit.rate += ((exploring() ? ORBIT_SPEED : 0) - orbit.rate) * (1 - Math.exp(-dt * 0.5));
         orbit.angle += orbit.rate * dt;
       }
-      const cam = solarCamera(ease(part(tourT, IN_SYSTEM, ZOOM)) * zoom.z, solarFade, orbit.angle);
+      let cam = solarCamera(ease(part(tourT, IN_SYSTEM, ZOOM)) * zoom.z, solarFade, orbit.angle);
+      // Visiting the Earth: on from there into the globe.
+      if (!reduced && visit.t !== visit.goal * EARTH_DIVE) {
+        visit.t = visit.goal ? Math.min(EARTH_DIVE, visit.t + dt) : Math.max(0, visit.t - dt);
+      }
+      const p = ease(visit.t / EARTH_DIVE), now = new Date();
+      const axes = p > 0 ? earthAxes(now) : null;
+      if (p > 0) {
+        if (!reduced) {
+          visit.rate += ((atGlobe() ? GLOBE_SPEED : 0) - visit.rate) * (1 - Math.exp(-dt * 0.5));
+          visit.turn += visit.rate * dt;
+        }
+        cam = diveCamera(cam, p, axes);
+      }
       const view = viewMatrix(cam);
+      solarDim = 1 - part(p, 0.25, 0.35); // the planets and orbits fade as the Earth grows
       drawSky(cam, view, solarFade, t);
-      // Orbits, then the Sun and planets on top.
-      useSolar();
-      gl.uniform3f(sCam, cam.eye[0], cam.eye[1], cam.eye[2]);
-      gl.uniformMatrix3fv(sView, false, view);
-      gl.uniform2f(sProj, proj.fx, proj.fy);
-      gl.uniform1f(sDpr, proj.dpr);
-      gl.uniform1f(sFade, solarFade);
-      gl.uniform1f(sFlat, 1);
-      const bodies = 1 + PLANETS.length;
-      for (let i = 0; i < PLANETS.length; i++) gl.drawArrays(gl.LINE_LOOP, bodies + i * ORBIT_STEPS, ORBIT_STEPS);
-      gl.uniform1f(sFlat, 0);
-      gl.drawArrays(gl.POINTS, 0, bodies);
-      bodyXY = solar.bodies.map((b) => project(b.pos, cam));
-      if (bodyXY[3]) { place(earthMarker, bodyXY[3]); fitLabel(earthMarker, bodyXY[3]); }
-      if (selected !== null) placeBodyMarker(bodyXY[selected]);
-      placeLabels(cam);
+      bodyXY = [];
+      if (solarDim > 0) {
+        // Orbits, then the Sun and planets on top.
+        useSolar();
+        gl.uniform3f(sCam, cam.eye[0], cam.eye[1], cam.eye[2]);
+        gl.uniformMatrix3fv(sView, false, view);
+        gl.uniform2f(sProj, proj.fx, proj.fy);
+        gl.uniform1f(sDpr, proj.dpr);
+        gl.uniform1f(sFade, solarFade * solarDim);
+        gl.uniform1f(sFlat, 1);
+        const bodies = 1 + PLANETS.length;
+        for (let i = 0; i < PLANETS.length; i++) gl.drawArrays(gl.LINE_LOOP, bodies + i * ORBIT_STEPS, ORBIT_STEPS);
+        gl.uniform1f(sFlat, 0);
+        gl.drawArrays(gl.POINTS, 0, bodies);
+        bodyXY = solar.bodies.map((b) => project(b.pos, cam));
+        if (bodyXY[3]) { place(earthMarker, bodyXY[3]); fitLabel(earthMarker, bodyXY[3]); }
+        if (selected !== null) placeBodyMarker(bodyXY[selected]);
+        placeLabels(cam);
+      }
+      // The Earth and the Moon up close, over the Earth's dot.
+      if (p > 0 && globe.ready) placeMoonMarker(drawGlobe(cam, view, axes, part(p, 0, 0.12), now), cam);
+      else moonMarker.classList.remove('is-shown');
     }
     // Out of the solar system: no comet, and the first one comes a few seconds after arriving again.
     if (solarFade === 0) { sky.comet = null; sky.next = t + 2 + Math.random() * 3; }
-    labels.style.opacity = solarFade.toFixed(3);
+    labels.style.opacity = (solarFade * solarDim).toFixed(3);
+    if (solarFade === 0) moonMarker.classList.remove('is-shown');
     frame = reduced ? null : requestAnimationFrame(draw);
   }
 

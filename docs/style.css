@@ -516,6 +516,71 @@ body {
   font-size: clamp(1.05rem, 2.8vmin, 1.35rem);
 }
 
+/* "You are here" is a button that flies down to the Earth. */
+.marker--earth .marker-label {
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  font-family: inherit;
+  line-height: inherit;
+  text-align: left;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: color 0.3s ease;
+}
+
+.marker--earth .marker-label:hover,
+.marker--earth .marker-label:focus-visible {
+  color: #fff;
+}
+
+.marker--earth .marker-label:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 4px;
+}
+
+/* The Moon's marker at the Earth up close: a small ring and a small label. */
+.marker--moon .marker-ring {
+  left: -11px;
+  top: -11px;
+  width: 22px;
+  height: 22px;
+  border-color: rgba(201, 206, 214, 0.55);
+  box-shadow: none;
+}
+
+.marker--moon .marker-label {
+  left: 18px;
+  top: -0.6em;
+  font-size: clamp(0.8rem, 2vmin, 0.95rem);
+}
+
+/* "The Earth now", under the banner, at the Earth up close. */
+.globe-caption {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  top: calc(12px + 2.6em);
+  z-index: 1;
+  text-align: center;
+  font-size: clamp(1rem, 2.6vmin, 1.25rem);
+  color: #d4d4e0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1s ease;
+}
+
+.globe-caption.is-shown {
+  opacity: 0.9;
+}
+
+.globe-caption small {
+  display: block;
+  color: var(--text);
+  font-size: 0.75em;
+}
+
 /* Planet names in the solar system; main.js places each one and fades them all in with the planets. */
 .planet-labels {
   position: fixed;
@@ -707,6 +772,24 @@ body {
   visibility: hidden;
 }
 
+/* At the Earth up close the note describes it and credits NASA's images too. */
+.globe-note,
+.tour-credit--earth {
+  display: none;
+}
+
+.tour-note.is-globe #tour-note-text {
+  display: none;
+}
+
+.tour-note.is-globe .globe-note {
+  display: inline;
+}
+
+.tour-note.is-globe .tour-credit--earth {
+  display: block;
+}
+
 /* Narrow screens: a marker's label goes under the ring, so it never runs off the right edge. */
 @media (max-width: 600px) {
   .marker-label {
@@ -717,6 +800,9 @@ body {
   }
 
   #earth-distance span, #body-distance span { display: block; }
+
+  .marker--earth .marker-label { text-align: center; }
+  .marker--moon .marker-label { left: 0; top: 16px; }
 
   /* Clear of the note, which takes four lines here. */
   .zoom { bottom: 6em; }
@@ -730,7 +816,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .float[role="button"], .line--top, .back, .touring .back, .marker, .touring .quote,
-  .planet-label, .tour-note, .zoom { transition: none; }
+  .planet-label, .tour-note, .zoom, .globe-caption { transition: none; }
   .float, .eye-glow, .float[role="button"] .tilt, .float[role="button"] .tilt::before,
   .float[role="button"] .eye-glow, .float[role="button"]:hover .eye-glow,
   .float[role="button"]:focus-visible .eye-glow { animation: none; }

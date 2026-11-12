@@ -2,8 +2,7 @@
 
 ## Phases (current and upcoming)
 
-- **Up next:** 1. Dive into a realistic Earth seen from space
-- **Later:** 2. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
+- **Later:** 1. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
 
 ## Dive into a realistic Earth seen from space
 
@@ -18,7 +17,7 @@ billing. The user chose our own realistic globe in the same WebGL scene instead,
 - The Sun's direction from the Earth for the visitor's date, from `PLANETS`, which gives the real day/night line.
 - Its own small WebGL programs (`solarProg`, `skyProg`), so the globe can be another one. No libraries.
 
-**Proposed phase:**
+**Proposed phase** (done, see below):
 - **The dive:** from the solar system, the camera flies on into the Earth's dot, which grows into a globe filling
   most of the screen. The sky's stars and the Milky Way stay behind it, and the Sun's light comes from the Sun's
   real direction.
@@ -144,6 +143,41 @@ with a pointer on the Earth that says "You are here". Use real data where it exi
 - **Planet positions:** live, for the visitor's date.
 
 ## Done
+
+### Dive into a realistic Earth seen from space (2026-11-12)
+
+**Built** in `docs/main.js` (the globe section: `sphereMesh`, `globeProg`/`airProg`, `loadGlobe`, `earthAxes`,
+`moonPlace`, `moonAxes`, `drawGlobe`; and in the tour section `visit`, `visitEarth`, `leaveEarth`, `slerp`,
+`diveCamera`, `placeMoonMarker`), `docs/index.html` (`#earth-dive`, which "You are here" now is, `#moon-marker`,
+`#globe-caption`, the globe note and NASA credit), `docs/style.css`, `docs/assets/img/earth-day.webp`,
+`earth-night.webp`, `earth-clouds.webp`, `moon.webp` (1.1 MB together, loaded when the tour reaches the Earth) and
+`tools/make-earth-images.js`.
+
+What it does:
+- **Starting the dive:** a click on the Earth's dot, or on "You are here" (by mouse or keyboard), at any zoom, flies
+  on in over 5 s. The planets fade and the dot grows into a globe filling 62% of the screen's narrower half.
+- **Where it ends:** over the visitor's time zone (from the browser's UTC offset, 25° north), with north up. The
+  camera then circles westward (about one turn in 3.5 minutes), so the Earth seems to turn the right way.
+- **The globe:** turned by Greenwich sidereal time, with day and night blended across the terminator, city lights,
+  clouds, sunlight glinting on the sea, and the air's glow inside and outside the edge.
+- **The Moon:** in its real place and phase, 1:1 in size and distance. Its marker (distance in miles and km, % lit)
+  shows when it's on screen and not behind the Earth.
+- **Text:** a caption and the status line read "The Earth now: day and night as they are at <time> your time". The
+  note credits NASA alongside the stars.
+- **Going back:** "← Back" or Esc goes back to the solar system; from there it flies home as before.
+- **Reduced motion:** cuts both ways, and the camera doesn't circle.
+
+The cloud layer was made from the Blue Marble with and without clouds, because the old Visible Earth image
+server (eoimages.gsfc.nasa.gov) no longer answers.
+
+**Checked** in headless Chromium (scratch `globe.js`, `globe2.js`, `moon.js`):
+- Frames of the dive and of the globe. The day/night line was where it really was (22:44 UTC: the US East Coast
+  lit up at dusk, the Pacific in daylight; Europe and Asia at night).
+- The Moon came into view after about 108 s of circling: 12% lit, which matches today's crescent, 41° from the Sun.
+- Esc steps out to the solar system, then home.
+- A reduced-motion phone cuts in by a tap on the dot, and "← Back" cuts out.
+- The exploring walk-through (`explore.js`) still passes.
+- No console errors.
 
 ### The head pulses to invite a click (2026-11-12)
 

@@ -42,13 +42,22 @@
     <button type="button" id="zoom-in" aria-label="Zoom in">+</button>
     <button type="button" id="zoom-out" aria-label="Zoom out">−</button>
   </div>
-  <div class="marker marker--earth" id="earth-marker" aria-hidden="true">
+  <div class="marker marker--earth" id="earth-marker">
     <span class="marker-ring"></span>
-    <span class="marker-label">You are here<small id="earth-date">The Earth</small><small id="earth-distance"></small></span>
+    <button class="marker-label" id="earth-dive" type="button" aria-label="You are here: the Earth. Fly down to it">You are here<small id="earth-date">The Earth</small><small id="earth-distance"></small></button>
   </div>
+  <div class="marker marker--moon" id="moon-marker" aria-hidden="true">
+    <span class="marker-ring"></span>
+    <span class="marker-label">The Moon<small id="moon-info"></small></span>
+  </div>
+  <p class="line globe-caption" id="globe-caption" aria-hidden="true">The Earth now<small id="globe-time"></small></p>
   <p class="line tour-note" id="tour-note"><span id="tour-note-text"></span>
+    <span class="globe-note">The Earth and the Moon as they are now; sizes and distance to scale.</span>
     <span class="tour-credit">Real stars thanks to Yale's
-      <a href="http://tdc-www.harvard.edu/catalogs/bsc5.html" target="_blank" rel="noopener">Bright Star Catalogue</a></span></p>
+      <a href="http://tdc-www.harvard.edu/catalogs/bsc5.html" target="_blank" rel="noopener">Bright Star Catalogue</a></span>
+    <span class="tour-credit tour-credit--earth">Earth and Moon images: NASA
+      (<a href="https://science.nasa.gov/earth/earth-observatory/" target="_blank" rel="noopener">Earth Observatory</a>,
+      <a href="https://svs.gsfc.nasa.gov/4720" target="_blank" rel="noopener">Scientific Visualization Studio</a>)</span></p>
   <p class="sr-only" id="tour-status" role="status"></p>
 
   <script src="main.js" defer></script>

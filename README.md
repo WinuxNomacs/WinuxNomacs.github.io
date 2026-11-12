@@ -27,6 +27,12 @@ system, past Neptune, and back in. Clicking or tapping the Sun or a planet, or i
 distance: the Sun's from the centre of the Milky Way, a planet's from the Sun on that day. The names are buttons, so
 the keyboard reaches them too, and "+"/"−" keys zoom.
 
+Clicking the Earth (its dot or "You are here", at any zoom) flies on down to it: the planets fade and the dot
+grows into a realistic globe seen from space, turned as it is at that moment, so day and night fall where they
+really are, with city lights on the night side, clouds, and the glow of the air round its edge. The camera
+circles it slowly. The Moon is there too, in its real place and phase, its distance to scale, so it only comes into
+view now and then; a small ring and label mark it. "← Back" or Esc returns to the solar system.
+
 "← Back" or Esc flies back from any point; out in the galaxy (before the dive into the Sun), so does a click
 anywhere. With "reduce
 motion" on, each step cuts straight to the next instead of flying, and the sky stays still, with no comets.
@@ -41,6 +47,8 @@ Everything the site serves is in `docs/`:
 - `quotes.md`: the quotes, one per `- ` list line
 - `quotes.js`: shows the quotes
 - `stars.bin`: the night sky's stars (see below)
+- `assets/img/earth-day.webp`, `earth-night.webp`, `earth-clouds.webp`, `moon.webp`: the Earth and Moon maps (see
+  below)
 - `assets/img/gargoyle-cutout-707.webp`, `gargoyle-cutout-1414.webp`: the head with its background cut out, at two
   sizes; high-density screens get the larger one
 - `assets/img/gargoyle-707.jpg`: the favicon
@@ -68,6 +76,17 @@ quickly, letter by letter, each letter glowing hot and then cooling to silver. T
 fully printed, then floats up and away. The next one starts 3 seconds later. Clicking or tapping a quote skips it:
 it floats away at once, even mid-print, and the next one follows 3 seconds later. After the last quote, a new shuffled
 round begins, never starting with the quote that was just shown.
+
+## The Earth and Moon images
+
+The globe uses NASA's public-domain maps, scaled to 2048×1024 (the Moon 1024×512) and saved as WebP:
+- **Day:** Blue Marble 2002 (NASA Earth Observatory), from Wikimedia Commons' "Whole world - land and oceans".
+- **Night:** Black Marble city lights (NASA Earth Observatory), from Commons' "The earth at night".
+- **Clouds:** the difference between the same Blue Marble with and without clouds (Commons' "Land ocean ice cloud
+  hires").
+- **Moon:** the Lunar Reconnaissance Orbiter colour map from NASA's Scientific Visualization Studio CGI Moon Kit.
+
+`tools/make-earth-images.js` remakes them from those downloads; its comments list the files and how to run it.
 
 ## Preview locally
 

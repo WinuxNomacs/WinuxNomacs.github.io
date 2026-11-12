@@ -2,7 +2,48 @@
 
 ## Phases (current and upcoming)
 
-- **Later:** 1. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
+- **Up next:** 1. Dive into a realistic Earth seen from space
+- **Later:** 2. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
+
+## Dive into a realistic Earth seen from space
+
+**Request** (user, 2026-11-12): clicking the Earth zooms the scene into the Earth. Google Earth zooming to the
+visitor's location was considered first, but it can't be embedded, and Google's 3D maps need an API key with
+billing. The user chose our own realistic globe in the same WebGL scene instead, with no location prompt.
+
+**Builds on:**
+- The solar system stage in `docs/main.js`: the Earth is `solar.bodies[3]`. The camera's zoom `zoom.z` (1 = at the
+  Earth) and its slow `orbit` already exist. A click on the Earth's dot currently just lets go of a picked body
+  (`select(3)`). The Earth's name is hidden behind "You are here" (`#earth-marker`, which takes no clicks).
+- The Sun's direction from the Earth for the visitor's date, from `PLANETS`, which gives the real day/night line.
+- Its own small WebGL programs (`solarProg`, `skyProg`), so the globe can be another one. No libraries.
+
+**Proposed phase:**
+- **The dive:** from the solar system, the camera flies on into the Earth's dot, which grows into a globe filling
+  most of the screen. The sky's stars and the Milky Way stay behind it, and the Sun's light comes from the Sun's
+  real direction.
+- **The globe:** a sphere drawn with NASA's public-domain images: Blue Marble for day and Black Marble city lights
+  on the night side. A soft blue atmosphere glows round the edge, sunlight glints on the oceans, and the day/night
+  line is blended.
+- **True for now:** the Earth is turned as it really is at the visitor's current time (Greenwich sidereal time),
+  tilted 23.4°, so day and night fall where they are at that moment. The camera circles slowly round it, as it
+  does round the Sun, rather than spinning the Earth, which would make the day/night line false.
+- **Text:** a label and the status line read "The Earth now: day and night as they are at <time> your time".
+  A credit line at the bottom names NASA's images, with a link.
+- **Images:** about 2048×1024 JPEGs of a few hundred KB each, kept in `docs/assets/img/`. They load only when the
+  dive starts, and the dive waits briefly if they haven't arrived yet.
+- **Keyboard:** "You are here" becomes a button that starts the dive.
+- **Reduced motion:** the dive cuts straight to the globe, and the camera doesn't circle.
+- **Fallback:** if the images can't load, the dive doesn't start.
+
+**Decisions** (user, 2026-11-12):
+- **What starts the dive:** clicking the Earth's dot or "You are here", at any zoom. The camera eases in to the Earth
+  first, then on into the globe.
+- **Clouds:** yes, a still cloud layer (NASA's public-domain cloud map, a typical day rather than today's weather),
+  just above the surface.
+- **The Moon:** yes, in its real place and phase for the visitor's moment, textured and lit by the Sun. Its distance
+  is to scale, so it's often off to one side or out of view.
+- **"← Back" and Esc from the globe:** back to the solar system at the Earth. From there, "← Back" flies home as now.
 
 ## The head pulses to invite a click
 

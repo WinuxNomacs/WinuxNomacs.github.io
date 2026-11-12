@@ -178,7 +178,143 @@ body {
   50%      { opacity: 0.9;  transform: translate(-50%, -50%) scale(1.1); }
 }
 
+/* ---- The tour: the head fades, the banner moves to the top edge, the camera flies to the Sun. ---- */
+
+.float[role="button"] {
+  cursor: pointer;
+  border-radius: 12px;
+  transition: opacity 0.8s ease, filter 0.8s ease;
+}
+
+.float[role="button"]:focus-visible {
+  outline: 1px solid rgba(var(--glow), 0.6);
+  outline-offset: 4px;
+}
+
+.line--top {
+  transition: transform 1.2s ease;
+}
+
+.touring .float {
+  opacity: 0;
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+.touring .quote {
+  opacity: 0;
+}
+
+/* --lift is set by main.js: the distance from the banner's place to 12px below the top edge. */
+.touring .line--top {
+  transform: translateY(var(--lift, 0px));
+}
+
+.back {
+  position: fixed;
+  top: 12px;
+  left: 16px;
+  z-index: 2;
+  padding: 0.3em 0.6em;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: clamp(0.95rem, 2.4vmin, 1.15rem);
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.8s ease, visibility 0.8s, color 0.3s ease;
+}
+
+.touring .back {
+  opacity: 0.75;
+  visibility: visible;
+  /* Visible at once, so it can take the focus when the tour starts. */
+  transition: opacity 0.8s ease, visibility 0s, color 0.3s ease;
+}
+
+.back:hover,
+.back:focus-visible {
+  color: #d4d4e0;
+}
+
+.back:focus-visible {
+  outline: 1px solid currentColor;
+}
+
+/* Sits on the Sun (main.js moves it there every frame); its centre is the ring's centre. */
+.sun-marker {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+
+.sun-marker.is-shown {
+  opacity: 1;
+}
+
+.sun-ring {
+  position: absolute;
+  left: -14px;
+  top: -14px;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(var(--glow), 0.8);
+  border-radius: 50%;
+  box-shadow: 0 0 12px rgba(var(--glow), 0.4);
+}
+
+.sun-ring::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: rgb(var(--glow));
+  box-shadow: 0 0 8px 2px rgba(var(--glow), 0.8);
+}
+
+.sun-label {
+  position: absolute;
+  left: 24px;
+  top: -0.7em;
+  white-space: nowrap;
+  color: #d4d4e0;
+  font-size: clamp(0.95rem, 2.4vmin, 1.15rem);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 6px #000, 0 0 14px #000;
+}
+
+.sun-label small {
+  display: block;
+  color: var(--text);
+  font-size: 0.8em;
+}
+
+/* Narrow screens: the label goes under the ring, so it never runs off the right edge. */
+@media (max-width: 600px) {
+  .sun-label {
+    left: 0;
+    top: 22px;
+    transform: translateX(-50%);
+    text-align: center;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .float[role="button"], .line--top, .back, .touring .back, .sun-marker, .touring .quote { transition: none; }
   .float, .eye-glow { animation: none; }
   .eye-glow { opacity: 0.5; }
   .tilt { transform: none; }

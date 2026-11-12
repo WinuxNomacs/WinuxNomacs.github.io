@@ -10,6 +10,11 @@ The galaxy is drawn with WebGL from about 110,000 generated points (fewer on pho
 libraries. It is laid out like the real Milky Way as astronomers have measured it: the bar, the two major arms
 (Scutum–Centaurus and Perseus), the two minor ones (Sagittarius and Norma) and the Orion Spur, where the Sun is. Without WebGL, the head floats on plain black.
 
+Clicking the head (or pressing Enter on it) starts a tour. The head and the quote fade away, the banner moves up to
+the top edge, and the camera flies through the galaxy to the Sun's real place in it, about 26,700 light-years from
+the centre, where a marker appears. "← Back", a click anywhere or Esc flies back. With "reduce motion" on, each
+step cuts straight to the next instead of flying.
+
 ## Files
 
 Everything the site serves is in `docs/`:

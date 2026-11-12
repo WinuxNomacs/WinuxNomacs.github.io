@@ -152,7 +152,7 @@ with reduced motion shows the same sky with identical frames; no console errors.
 ### Small changes (2026-11-12)
 
 - **Star credit:** the note at the bottom of the solar system view ends "Real stars thanks to Yale's Bright Star
-  Catalogue", linking to the catalogue at CDS in a new tab (`.tour-credit` in `docs/index.html`); the note is no
+  Catalogue", linking to Harvard's page for the catalogue in a new tab (`.tour-credit` in `docs/index.html`); the note is no
   longer hidden from screen readers, and on phones the zoom buttons sit higher to clear it.
 
 - **Title rises on hover:** pointing at (or focusing) "Winux Nomacs" makes it grow 15% and lift, with its shadow

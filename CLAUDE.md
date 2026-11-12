@@ -9,7 +9,13 @@ A static GitHub Pages site (<https://winuxnomacs.github.io/>): one page, plain H
 - **Preview:** `python3 -m http.server <port> -d docs`.
 - **Motion:** every animation must stop under `prefers-reduced-motion: reduce` (in both `style.css` and
   `main.js`).
-- **Image:** `docs/assets/img/gargoyle-707.jpg` and `gargoyle-1414.jpg` (for 2× screens) are downscaled
-  from a 2048 px original that is kept out of the repo. The page never shows it wider than 707 px.
+- **Image:** `docs/assets/img/gargoyle-cutout-707.webp` and `-1414.webp` (for 2× screens) are the head with its
+  black background made transparent, so the galaxy shows around it. Both are made from a 2048 px original that is
+  kept out of the repo: the near-black area connected to the image border is flood-filled, the dark fringe beside
+  it is faded, and the edge is softened. Check a new cut-out over a bright background, especially in the dark
+  jaw/neck shadow. `gargoyle-707.jpg` (black background) is the favicon.
+- **Galaxy:** `main.js` generates the points with a fixed seed, so every visit looks the same. Its shape and
+  look are set by the constants at the top of the galaxy section (`TILT`, `ROLL`, `SPIN`, the point counts) and
+  the `uGain` brightness. Headless Chromium renders it in software at about 30 fps, so judge speed on a real GPU.
 - **Eye glow position:** the glow is placed at the lit eye, which sits at 53.0% / 32.8% of the image.
   If the image changes, measure the eye again.

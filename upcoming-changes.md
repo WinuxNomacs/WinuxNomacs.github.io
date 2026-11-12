@@ -2,7 +2,51 @@
 
 ## Phases (current and upcoming)
 
-- **Later:** 1. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
+- **Up next:** 1. A livelier sky in the solar system: more stars, some twinkling, and comets
+- **Then:** 2. Explore the solar system: zoom out and in, and click the Sun and planets for their distances
+- **Later:** 3. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
+
+## Solar system: a livelier sky, and exploring it
+
+**Requests** (from `new.md`, 2026-11-12):
+- While in the solar system, show distant stars in the background as particles, some twinkling lightly and
+  randomly.
+- At the Earth, let the user click the Sun and the planets, and zoom out to see the whole solar system. The Sun
+  shows its distance from the centre of the Milky Way; each planet shows its distance from the Sun. Only the Earth
+  says "You are here".
+- Random comets streak across the background, so space looks less empty.
+
+**Builds on:**
+- The solar stage in `docs/main.js`. Its sky is already the galaxy's distant-star sphere (`STAR_POINTS`, 1,800 on
+  phones, 3,500 otherwise), drawn faint and still, with no twinkling.
+- `solarCamera(z)`, which already runs from the whole solar system (z = 0) to the Earth (z = 1). Zooming can drive
+  that same z.
+- The Earth's marker (`#earth-marker`, "You are here", the date and the distance from the Sun) and the planet
+  names (`#planet-labels`).
+
+**Conflict:** during the tour, a click anywhere goes back to the landing page, so clicking a planet would leave the
+solar system. That behaviour has to change at this stage (see the decisions).
+
+**Proposed phases:**
+1. **A livelier sky:** the real night sky behind the solar system (catalogue stars and a faint Milky Way band), a
+   few stars twinkling gently at random; now and then a faint comet with a glowing tail streaks across the background, behind the
+   planets. Under reduced motion: stars stay still, no comets.
+2. **Explore the solar system:** once at the Earth, the mouse wheel, a pinch, or "+"/"−" buttons zoom between the
+   Earth and the whole solar system out past Neptune. Clicking or tapping the Sun or a planet (or its name) rings it
+   and shows its name and distance: the Sun "26,700 light-years from the centre of the Milky Way", a planet "X
+   million miles (Y million km) from the Sun" for that day. The Earth's "You are here" stays. The names become
+   buttons, so the keyboard can reach them too.
+
+**Decisions** (user, 2026-11-12):
+- **Star sky:** the real night sky: the naked-eye stars of the Yale Bright Star Catalogue (5th edition, about
+  5,000 stars brighter than magnitude 6, with true positions, brightness and colours), so the constellations are
+  real, plus a faint Milky Way band along the galactic plane. Kept as a small data file in `docs/` (about 60 KB),
+  with the source credited in the README. The galaxy stage keeps its generated stars.
+- **Going back from the solar system:** only "← Back" and Esc. Clicking empty space there does nothing, so a missed
+  tap on a planet doesn't end the tour. During the flight through the galaxy, a click anywhere still goes back.
+- **Navigation:** zoom only, by wheel, pinch, or "+"/"−" buttons, along the path the tour flew (between the Earth
+  and the whole solar system). No dragging to rotate.
+- **Comets:** occasional: one every 6–15 seconds at random, faint, with a glowing tail.
 
 ## Tour: from the galaxy to "You are here"
 
@@ -43,6 +87,15 @@ with a pointer on the Earth that says "You are here". Use real data where it exi
 - **Planet positions:** live, for the visitor's date.
 
 ## Done
+
+### Small changes (2026-11-12)
+
+- **Custom domain:** the site is served at <https://winuxnomacs.com/> (`docs/CNAME`, added by GitHub).
+- **More quotes**, and the head's alt text no longer shows while the image loads.
+- **Silver text:** the banner and quotes are gleaming silver 3D text with a band of light sweeping across them.
+- **Laser printing:** a beam from the gargoyle's eye prints each quote, letter by letter (`laser()` in
+  `docs/quotes.js`).
+- **Earth's distance:** "You are here" shows the Earth's distance from the Sun for the day, in miles and km.
 
 ### Tour phase 3: the solar system with "You are here"
 

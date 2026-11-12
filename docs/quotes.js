@@ -10,6 +10,20 @@
 
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+  // Clicking the quote while it is shown (or still printing) skips it: it floats away at once and the next one
+  // follows after the usual gap.
+  let skip = null;
+  const shown = (ms) => new Promise((resolve) => {
+    const done = () => { clearTimeout(timer); skip = null; resolve(); };
+    const timer = setTimeout(done, ms);
+    skip = done;
+  });
+  el.addEventListener('click', () => {
+    if (!skip) return;
+    el.querySelector('.laser')?.remove(); // the eye's beam goes with it
+    skip();
+  });
+
   // Every "- text" or "* text" line of the markdown list is a quote; anything else is ignored.
   const parse = (md) => [...new Set(
     md.split('\n')
@@ -128,8 +142,8 @@
         [round[0], round[round.length - 1]] = [round[round.length - 1], round[0]];
       }
       for (const quote of round) {
-        el.className = 'line quote';
-        await wait(type(quote) + HOLD);
+        el.className = 'line quote is-skippable';
+        await shown(type(quote) + HOLD);
         el.className = 'line quote is-out';
         await wait(EXIT);
         el.replaceChildren();

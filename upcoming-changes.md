@@ -36,7 +36,14 @@ billing. The user chose our own realistic globe in the same WebGL scene instead,
 - **Reduced motion:** the dive cuts straight to the globe, and the camera doesn't circle.
 - **Fallback:** if the images can't load, the dive doesn't start.
 
-**Open decisions:** what starts the dive, clouds, the Moon, and where "← Back" goes from the globe (asked 2026-11-12).
+**Decisions** (user, 2026-11-12):
+- **What starts the dive:** clicking the Earth's dot or "You are here", at any zoom. The camera eases in to the Earth
+  first, then on into the globe.
+- **Clouds:** yes, a still cloud layer (NASA's public-domain cloud map, a typical day rather than today's weather),
+  just above the surface.
+- **The Moon:** yes, in its real place and phase for the visitor's moment, textured and lit by the Sun. Its distance
+  is to scale, so it's often off to one side or out of view.
+- **"← Back" and Esc from the globe:** back to the solar system at the Earth. From there, "← Back" flies home as now.
 
 ## The head pulses to invite a click
 

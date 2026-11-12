@@ -9,9 +9,10 @@ A static GitHub Pages site (<https://winuxnomacs.github.io/>): one page, plain H
 - **Preview:** `python3 -m http.server <port> -d docs`. Opening `index.html` as a file shows no quotes, because
   the browser blocks reading `quotes.md` that way.
 - **Quotes:** `docs/quotes.md` is the list (every `- ` or `* ` line is a quote; other lines are ignored).
-  `docs/quotes.js` reads it, shuffles it into rounds with no repeats, and sets the `.quote` element's class
-  (`is-in`, then `is-out`). The CSS transitions in `style.css` do the movement. Its timing constants must match the
-  1.6 s transition in `style.css`.
+  `docs/quotes.js` reads it and shuffles it into rounds with no repeats. It types each quote as one span per
+  letter (`.ch`, with `--i` as the letter's position, grouped in no-wrap `.word` spans), plus an `.sr-only` copy for
+  screen readers. Then it adds `is-out` so the quote floats away. Its `CHAR_MS`, `FADE_MS` and `EXIT` constants must
+  match the `animation-delay`, the animation and the transition in `style.css`.
 - **Motion:** every animation must stop under `prefers-reduced-motion: reduce` (in both `style.css` and
   `main.js`).
 - **Image:** `docs/assets/img/gargoyle-cutout-707.webp` and `-1414.webp` (for 2× screens) are the head with its

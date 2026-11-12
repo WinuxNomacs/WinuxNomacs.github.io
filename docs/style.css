@@ -57,9 +57,30 @@ body {
   font-size: clamp(1.1rem, 3.2vmin, 1.8rem);
 }
 
-.line--bottom {
-  font-size: clamp(0.85rem, 2.2vmin, 1.1rem);
-  opacity: 0.55;
+/* Quotes float up into view, wait, then float on up and away (timing in quotes.js). */
+.quote {
+  /* Room for two lines, so the head doesn't move when a quote wraps or the slot is empty. */
+  min-height: 2.8em;
+  max-width: min(36rem, 100%);
+  font-size: clamp(0.95rem, 2.5vmin, 1.2rem);
+  font-style: italic;
+  line-height: 1.4;
+  opacity: 0;
+  transform: translateY(1.5rem);
+  filter: blur(6px);
+  transition: opacity 1.6s ease, transform 1.6s ease, filter 1.6s ease;
+}
+
+.quote.is-in {
+  opacity: 0.85;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
+.quote.is-out {
+  opacity: 0;
+  transform: translateY(-1.5rem);
+  filter: blur(6px);
 }
 
 /* Slow drift; the tilt lives on an inner element so the two transforms don't fight. */
@@ -125,4 +146,5 @@ body {
   .float, .eye-glow { animation: none; }
   .eye-glow { opacity: 0.5; }
   .tilt { transform: none; }
+  .quote, .quote.is-in, .quote.is-out { transform: none; filter: none; }
 }

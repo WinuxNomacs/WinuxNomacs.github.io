@@ -3,6 +3,13 @@
   --text: #8a8a94;
   --glow: 255, 214, 120;
   --size: min(70vmin, 707px);
+  /* Polished silver for the banner and quotes: bright top, a darker band across the middle, bright bottom. */
+  --silver: linear-gradient(to bottom, #ffffff 0%, #eef0f4 28%, #a7aebb 50%, #c9ced6 58%, #f4f6f9 86%, #ffffff 100%);
+  /* Raised 3D look: three 1px steps of darkening grey under the letters, a soft drop shadow, and a dark halo
+     that keeps them readable over the bright galaxy core. (Shadows go in a filter, because text-shadow would
+     paint over the gradient-filled letters.) */
+  --metal: drop-shadow(0 1px 0 #7d838e) drop-shadow(0 1px 0 #50555e) drop-shadow(0 1px 0 #2e3137)
+           drop-shadow(0 3px 3px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 6px rgba(0, 0, 0, 0.8));
   --rx: 0deg;
   --ry: 0deg;
 }
@@ -55,23 +62,49 @@ body {
 
 .line--top {
   font-size: clamp(1.21rem, 3.52vmin, 1.98rem);
+  opacity: 1;
+}
+
+/* Silver letters: the gradient is painted through the text. */
+.banner-link,
+.quote .ch {
+  background-image: var(--silver);
+  -webkit-background-clip: text;
+          background-clip: text;
+  color: transparent;
+  text-shadow: none;
 }
 
 /* The banner links to GitHub but still reads as a title: no underline, a slight brighten on hover. */
 .banner-link {
-  color: inherit;
+  display: inline-block;
   text-decoration: none;
   border-radius: 4px;
-  transition: color 0.3s ease;
+  /* A band of light sweeps across the silver every 7s; the silver is a little deeper here so the band shows. */
+  background-image:
+    linear-gradient(110deg, transparent 40%, rgba(255, 255, 255, 0.85) 46%, #fff 48%, #fff 52%,
+                    rgba(255, 255, 255, 0.85) 54%, transparent 60%),
+    linear-gradient(to bottom, #e6e9ee 0%, #c0c6cf 30%, #7c8494 50%, #a6adb9 60%, #dce0e6 88%, #f2f4f7 100%);
+  background-size: 300% 100%, 100% 100%;
+  background-repeat: no-repeat;
+  background-position: 100% 0, 0 0;
+  filter: var(--metal);
+  animation: gleam 7s ease-in-out infinite;
+  transition: filter 0.3s ease;
+}
+
+@keyframes gleam {
+  0%, 55%   { background-position: 100% 0, 0 0; }
+  80%, 100% { background-position: 0% 0, 0 0; }
 }
 
 .banner-link:hover,
 .banner-link:focus-visible {
-  color: #d4d4e0;
+  filter: var(--metal) brightness(1.15);
 }
 
 .banner-link:focus-visible {
-  outline: 1px solid currentColor;
+  outline: 1px solid #c9ced6;
   outline-offset: 6px;
 }
 
@@ -83,7 +116,9 @@ body {
   font-size: clamp(1.045rem, 2.75vmin, 1.32rem);
   font-style: italic;
   line-height: 1.4;
-  opacity: 0.85;
+  opacity: 1;
+  text-shadow: none;
+  filter: var(--metal) blur(0);
   transition: opacity 1.6s ease, transform 1.6s ease, filter 1.6s ease;
 }
 
@@ -116,7 +151,7 @@ body {
 .quote.is-out {
   opacity: 0;
   transform: translateY(-1.5rem);
-  filter: blur(6px);
+  filter: var(--metal) blur(6px);
 }
 
 /* Slow drift; the tilt lives on an inner element so the two transforms don't fight. */
@@ -375,5 +410,6 @@ body {
   .float, .eye-glow { animation: none; }
   .eye-glow { opacity: 0.5; }
   .tilt { transform: none; }
-  .quote, .quote.is-out { transform: none; filter: none; }
+  .quote, .quote.is-out { transform: none; filter: var(--metal); }
+  .banner-link { animation: none; }
 }

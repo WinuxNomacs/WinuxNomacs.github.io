@@ -12,7 +12,7 @@ Everything the site serves is in `docs/`:
 - `index.html`: the page
 - `style.css`: the layout, the float and the eye-glow animations
 - `main.js`: the mouse/tilt effect and the ember background
-- `assets/img/Gargoyle.jpg`: the image
+- `assets/img/gargoyle-707.jpg`, `gargoyle-1414.jpg`: the image at two sizes; high-density screens get the larger one
 - `.nojekyll`: tells GitHub Pages to serve the files as they are
 
 The site has no build step and no dependencies.

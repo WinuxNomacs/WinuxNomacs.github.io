@@ -9,5 +9,7 @@ A static GitHub Pages site (<https://winuxnomacs.github.io/>): one page, plain H
 - **Preview:** `python3 -m http.server <port> -d docs`.
 - **Motion:** every animation must stop under `prefers-reduced-motion: reduce` (in both `style.css` and
   `main.js`).
-- **Eye glow position:** the glow is placed at the lit eye, which sits at 53.2% / 32.7% of
-  `Gargoyle.jpg`. If the image changes, measure the eye again.
+- **Image:** `docs/assets/img/gargoyle-707.jpg` and `gargoyle-1414.jpg` (for 2× screens) are downscaled
+  from a 2048 px original that is kept out of the repo. The page never shows it wider than 707 px.
+- **Eye glow position:** the glow is placed at the lit eye, which sits at 53.0% / 32.8% of the image.
+  If the image changes, measure the eye again.

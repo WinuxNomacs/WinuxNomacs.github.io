@@ -95,11 +95,11 @@ body {
   -webkit-user-drag: none;
 }
 
-/* Placed on the lit eye (measured at 53.2% / 32.7% of the image). */
+/* Placed on the lit eye (measured at 53.0% / 32.8% of the image). */
 .eye-glow {
   position: absolute;
-  left: 53.2%;
-  top: 32.7%;
+  left: 53.0%;
+  top: 32.8%;
   width: 26%;
   aspect-ratio: 1.6;
   transform: translate(-50%, -50%);

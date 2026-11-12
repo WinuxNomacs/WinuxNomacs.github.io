@@ -2,8 +2,7 @@
 
 ## Phases (current and upcoming)
 
-- **Up next:** 1. The head pulses to invite a click
-- **Later:** 2. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
+- **Later:** 1. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
 
 ## The head pulses to invite a click
 
@@ -14,7 +13,7 @@ click it.
 works) already drifts up and down every 7 s, and its eye glow (`.eye-glow`) swells every 3.2 s. Clicking the head
 starts the tour.
 
-**Proposed phase:** a rhythmic pulse on the head only while it is a button (no WebGL, no tour, so no pulse), the eye
+**Proposed phase** (done, see below): a rhythmic pulse on the head only while it is a button (no WebGL, no tour, so no pulse), the eye
 glow flaring on each beat, stopped while touring and under reduced motion.
 
 **Decisions** (user, 2026-11-12):
@@ -104,6 +103,17 @@ with a pointer on the Earth that says "You are here". Use real data where it exi
 - **Planet positions:** live, for the visitor's date.
 
 ## Done
+
+### The head pulses to invite a click (2026-11-12)
+
+**Built** in `docs/style.css` (`heartbeat`, `aura`, `eye-beat` and `.tilt::before`): while the head is a button, it
+beats "lub-dub" every 2.4 s: it swells 3% (the `scale` property, so it adds to the tilt), a gold aura flares round
+the cut-out's outline (a blackened copy of the image with a gold drop-shadow, 6% larger up and left so the horns'
+glow isn't clipped, faded at the cropped right and bottom edges), and the eye flares. Hover or focus stops it (the
+eye goes back to its slow pulse); so do the tour and reduced motion.
+**Checked** in headless Chromium (scratch `pulse.js`, `pulsefocus.js`): frames frozen at the beat's peak and at
+rest (aura on the outline only, no straight edges); hover and keyboard focus stop the beat, moving away restarts
+it; no head animations under reduced motion; no console errors.
 
 ### Solar system: exploring it (2026-11-12)
 

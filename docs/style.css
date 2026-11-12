@@ -314,6 +314,81 @@ body {
   outline-offset: 4px;
 }
 
+/* Once the head is a button it beats like a heart ("lub-dub" every 2.4s, then a rest) to invite a click: it swells
+   about 3%, a gold aura flares round its outline and the eye flares. The pointer on it, or focus, stops the beat.
+   The aura is a copy of the cut-out behind the head, made black and given a gold glow; only its opacity changes.
+   It reaches 6% further up and left than the image (the horns come close to the top), and fades out at the right
+   and bottom like the image does, where the photo crops the gargoyle (84%/99% of the image = 85%/99% here). */
+.tilt::before {
+  content: "";
+  position: absolute;
+  left: -6%;
+  top: -6%;
+  z-index: -1;
+  width: 106%;
+  height: 106%;
+  background: url("assets/img/gargoyle-cutout-707.webp") no-repeat right bottom / calc(100% / 1.06) calc(100% / 1.06);
+  filter: brightness(0) drop-shadow(0 0 8px rgba(var(--glow), 0.9)) drop-shadow(0 0 26px rgba(var(--glow), 0.55));
+  -webkit-mask-image:
+    linear-gradient(to right, #000 85%, transparent 99%),
+    linear-gradient(to bottom, #000 85%, transparent 99%);
+  -webkit-mask-composite: source-in;
+          mask-image:
+    linear-gradient(to right, #000 85%, transparent 99%),
+    linear-gradient(to bottom, #000 85%, transparent 99%);
+          mask-composite: intersect;
+  opacity: 0;
+  pointer-events: none;
+  will-change: opacity;
+}
+
+.float[role="button"] .tilt {
+  animation: heartbeat 2.4s ease-in-out infinite;
+}
+
+.float[role="button"] .tilt::before {
+  animation: aura 2.4s ease-in-out infinite;
+}
+
+.float[role="button"] .eye-glow {
+  animation: eye-beat 2.4s ease-in-out infinite;
+}
+
+.float[role="button"]:hover .tilt,
+.float[role="button"]:hover .tilt::before,
+.float[role="button"]:focus-visible .tilt,
+.float[role="button"]:focus-visible .tilt::before,
+.touring .float .tilt,
+.touring .float .tilt::before {
+  animation: none;
+}
+
+.float[role="button"]:hover .eye-glow,
+.float[role="button"]:focus-visible .eye-glow {
+  animation: pulse 3.2s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+  0%, 40%, 100% { scale: 1; }
+  8%            { scale: 1.03; }
+  16%           { scale: 1.005; }
+  24%           { scale: 1.022; }
+}
+
+@keyframes aura {
+  0%, 45%, 100% { opacity: 0; }
+  8%            { opacity: 1; }
+  16%           { opacity: 0.35; }
+  24%           { opacity: 0.8; }
+}
+
+@keyframes eye-beat {
+  0%, 45%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(0.9); }
+  8%            { opacity: 1;   transform: translate(-50%, -50%) scale(1.15); }
+  16%           { opacity: 0.5; transform: translate(-50%, -50%) scale(0.98); }
+  24%           { opacity: 0.9; transform: translate(-50%, -50%) scale(1.1); }
+}
+
 .line--top {
   transition: transform 1.2s ease;
 }
@@ -628,7 +703,9 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .float[role="button"], .line--top, .back, .touring .back, .marker, .touring .quote,
   .planet-label, .tour-note, .zoom { transition: none; }
-  .float, .eye-glow { animation: none; }
+  .float, .eye-glow, .float[role="button"] .tilt, .float[role="button"] .tilt::before,
+  .float[role="button"] .eye-glow, .float[role="button"]:hover .eye-glow,
+  .float[role="button"]:focus-visible .eye-glow { animation: none; }
   .eye-glow { opacity: 0.5; }
   .tilt { transform: none; }
   .quote, .quote.is-out { transform: none; filter: var(--metal); }

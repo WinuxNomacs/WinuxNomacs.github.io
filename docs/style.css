@@ -319,7 +319,7 @@ body {
   outline-offset: 4px;
 }
 
-/* Once the head is a button it beats like a heart ("lub-dub" every 2.4s, then a rest) to invite a click: it swells
+/* Once the head is a button it beats like a heart ("lub-dub" every 2.9s, then a rest) to invite a click: it swells
    about 3%, a gold aura flares round its outline and the eye flares. The pointer on it, or focus, stops the beat.
    The aura is a copy of the cut-out behind the head, made black and given a gold glow; only its opacity changes.
    It reaches 6% further up and left than the image (the horns come close to the top), and fades out at the right
@@ -348,15 +348,15 @@ body {
 }
 
 .float[role="button"] .tilt {
-  animation: heartbeat 2.4s ease-in-out infinite;
+  animation: heartbeat 2.9s ease-in-out infinite;
 }
 
 .float[role="button"] .tilt::before {
-  animation: aura 2.4s ease-in-out infinite;
+  animation: aura 2.9s ease-in-out infinite;
 }
 
 .float[role="button"] .eye-glow {
-  animation: eye-beat 2.4s ease-in-out infinite;
+  animation: eye-beat 2.9s ease-in-out infinite;
 }
 
 .float[role="button"]:hover .tilt,

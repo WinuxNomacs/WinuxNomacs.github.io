@@ -6,7 +6,12 @@ A static GitHub Pages site (<https://winuxnomacs.github.io/>): one page, plain H
   from `main` / `/docs`, and `docs/.nojekyll` turns off Jekyll processing.
 - **What a push publishes:** a push to `main` puts the site live within about a minute. There are no
   workflows, so a push uses no Actions minutes.
-- **Preview:** `python3 -m http.server <port> -d docs`.
+- **Preview:** `python3 -m http.server <port> -d docs`. Opening `index.html` as a file shows no quotes, because
+  the browser blocks reading `quotes.md` that way.
+- **Quotes:** `docs/quotes.md` is the list (every `- ` or `* ` line is a quote; other lines are ignored).
+  `docs/quotes.js` reads it, shuffles it into rounds with no repeats, and sets the `.quote` element's class
+  (`is-in`, then `is-out`). The CSS transitions in `style.css` do the movement. Its timing constants must match the
+  1.6 s transition in `style.css`.
 - **Motion:** every animation must stop under `prefers-reduced-motion: reduce` (in both `style.css` and
   `main.js`).
 - **Image:** `docs/assets/img/gargoyle-cutout-707.webp` and `-1414.webp` (for 2× screens) are the head with its

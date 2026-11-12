@@ -79,7 +79,25 @@
     beam.animate([{ opacity: 0 }, { opacity: 1, offset: 80 / total }, { opacity: 1, offset: (end + 80) / total },
                   { opacity: 0 }], { duration: total, fill: 'forwards' })
       .finished.then(() => beam.remove(), () => {});
+
+    // The beam from the gargoyle's eye to the laser's point, re-aimed every frame until the laser is gone.
+    const ray = document.createElement('span');
+    ray.className = 'eye-beam';
+    ray.setAttribute('aria-hidden', 'true');
+    document.body.append(ray);
+    const follow = () => {
+      if (!beam.isConnected) { ray.remove(); return; }
+      const e = eye.getBoundingClientRect(), h = beam.getBoundingClientRect();
+      const ex = e.left + e.width / 2, ey = e.top + e.height / 2;
+      const dx = h.left + h.width / 2 - ex, dy = h.top + h.height * 0.3 - ey;
+      ray.style.width = Math.hypot(dx, dy).toFixed(1) + 'px';
+      ray.style.transform = `translate(${ex.toFixed(1)}px, ${ey.toFixed(1)}px) rotate(${Math.atan2(dy, dx).toFixed(4)}rad)`;
+      ray.style.opacity = getComputedStyle(beam).opacity;
+      requestAnimationFrame(follow);
+    };
+    follow();
   }
+  const eye = document.querySelector('.eye-glow');
 
   // Tells each letter where it sits in the slot, so one band of light can sweep across them all (see style.css).
   function place() {

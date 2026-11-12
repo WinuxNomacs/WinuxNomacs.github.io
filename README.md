@@ -2,7 +2,7 @@
 
 Source for <https://winuxnomacs.github.io/>: a single page with a gargoyle's head floating in front of a spiral
 galaxy that turns slowly in 3D space. "Winux Nomacs" sits above the head and links to
-<https://github.com/winuxnomacs>. Quotes type in below it one at a time. The head drifts, its eye glow pulses, and it tilts toward the mouse (or the
+<https://github.com/winuxnomacs>. Quotes appear below it one at a time, printed letter by letter by a moving laser. The head drifts, its eye glow pulses, and it tilts toward the mouse (or the
 phone's tilt, where the browser allows it) while the galaxy shifts behind it for depth. Visitors who have turned
 on "reduce motion" in their system settings get a still picture.
 
@@ -37,10 +37,10 @@ The site has no build step and no dependencies.
 ## Quotes
 
 To add, change or remove a quote, edit the list in `docs/quotes.md` and push. The page reads that file when it
-loads. It shows the quotes in random order, each one exactly once before any repeats. Each quote types in quickly,
-letter by letter, stays for 10 seconds once fully typed, then floats up and away. The next one starts 3 seconds
-later. After the last quote, a new
-shuffled round begins, never starting with the quote that was just shown.
+loads. It shows the quotes in random order, each one exactly once before any repeats. A laser prints each quote
+quickly, letter by letter, each letter glowing hot and then cooling to silver. The quote stays for 10 seconds once
+fully printed, then floats up and away. The next one starts 3 seconds later. After the last quote, a new shuffled
+round begins, never starting with the quote that was just shown.
 
 ## Preview locally
 

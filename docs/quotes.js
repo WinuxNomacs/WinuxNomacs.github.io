@@ -50,7 +50,35 @@
     });
     el.replaceChildren(spoken, shown);
     place();
-    return Math.max(0, i - 1) * CHAR_MS + FADE_MS;
+    const ms = Math.max(0, i - 1) * CHAR_MS + FADE_MS;
+    if (!still.matches) laser();
+    return ms;
+  }
+
+  // Moves a laser along the letters as they appear, as if it were printing them, then fades it out.
+  const still = matchMedia('(prefers-reduced-motion: reduce)');
+  function laser() {
+    const letters = [...el.querySelectorAll('.ch')];
+    if (!letters.length) return;
+    const beam = document.createElement('span');
+    beam.className = 'laser';
+    beam.setAttribute('aria-hidden', 'true');
+    el.append(beam);
+    const box = el.getBoundingClientRect();
+    const end = Number(letters[letters.length - 1].style.getPropertyValue('--i')) * CHAR_MS;
+    const frames = letters.map((letter) => {
+      const r = letter.getBoundingClientRect();
+      const x = r.left - box.left + r.width / 2, y = r.top - box.top + r.height / 2;
+      return { transform: `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`,
+               offset: end ? Number(letter.style.getPropertyValue('--i')) * CHAR_MS / end : 0 };
+    });
+    if (frames.length === 1) frames.push({ ...frames[0], offset: 1 });
+    beam.animate(frames, { duration: Math.max(1, end), easing: 'linear', fill: 'forwards' });
+    // On in 80ms, held while printing, off over 300ms after the last letter.
+    const total = end + 380;
+    beam.animate([{ opacity: 0 }, { opacity: 1, offset: 80 / total }, { opacity: 1, offset: (end + 80) / total },
+                  { opacity: 0 }], { duration: total, fill: 'forwards' })
+      .finished.then(() => beam.remove(), () => {});
   }
 
   // Tells each letter where it sits in the slot, so one band of light can sweep across them all (see style.css).

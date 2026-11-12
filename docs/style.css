@@ -112,6 +112,7 @@ body {
 /* Quotes type in letter by letter, wait, then float up and away (timing in quotes.js). */
 .quote {
   /* Room for two lines, so the head doesn't move when a quote wraps or the slot is empty. */
+  position: relative;
   min-height: 2.8em;
   max-width: min(36rem, 100%);
   font-size: clamp(1.045rem, 2.75vmin, 1.32rem);
@@ -151,12 +152,45 @@ body {
     calc(var(--sweep) * (var(--qw, 0px) + var(--band)) - var(--band) - var(--x, 0px)) 0,
     0 0;
   opacity: 0;
-  animation: type-in 0.25s ease forwards;
+  /* Fades in as the laser reaches it, glowing hot, then cools to silver. */
+  animation: type-in 0.25s ease forwards, cool 0.9s ease-out forwards;
   animation-delay: calc(var(--i) * 30ms);
 }
 
 @keyframes type-in {
   to { opacity: 1; }
+}
+
+@keyframes cool {
+  0%, 15% { text-shadow: 0 0 2px #fff, 0 0 6px rgba(var(--glow), 0.95), 0 0 12px rgba(var(--glow), 0.6); }
+  100%    { text-shadow: 0 0 0 rgba(255, 255, 255, 0), 0 0 0 rgba(var(--glow), 0), 0 0 0 rgba(var(--glow), 0); }
+}
+
+/* The laser that prints the quote: a hot point on the letter being printed, with its beam coming down from above.
+   quotes.js moves it from letter to letter in step with the typing, then fades it out. */
+.laser {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 3px;
+  height: 1.3em;
+  margin: -0.65em 0 0 -1.5px;
+  border-radius: 2px;
+  background: linear-gradient(to bottom, transparent, #fff 30%, #fff 70%, transparent);
+  box-shadow: 0 0 6px 2px rgba(var(--glow), 0.9), 0 0 18px 6px rgba(var(--glow), 0.4);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.laser::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  width: 1px;
+  height: 3em;
+  transform: translateX(-50%);
+  background: linear-gradient(to top, rgba(255, 240, 200, 0.9), rgba(var(--glow), 0));
 }
 
 /* Words never break across lines between letters. */
@@ -438,4 +472,5 @@ body {
   .tilt { transform: none; }
   .quote, .quote.is-out { transform: none; filter: var(--metal); }
   .banner-link, .quote { animation: none; }
+  .laser { display: none; }
 }

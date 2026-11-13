@@ -630,6 +630,48 @@ body {
   font-size: 0.75em;
 }
 
+/* Names of a few of the nearest stars, between the galaxy and the solar system; main.js places them. */
+.near-labels {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+.near-labels.is-shown {
+  opacity: 1;
+}
+
+.near-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  margin: -0.65em 0 0 10px;
+  white-space: nowrap;
+  color: var(--text);
+  font-size: clamp(0.75rem, 1.9vmin, 0.9rem);
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 5px #000;
+  transition: opacity 0.4s ease;
+}
+
+.near-label small {
+  display: block;
+  font-size: 0.85em;
+  opacity: 0.8;
+}
+
+.near-label.is-left {
+  translate: calc(-100% - 20px) 0;
+  text-align: right;
+}
+
+.near-label.is-off {
+  opacity: 0;
+}
+
 /* Planet names in the solar system; main.js places each one and fades them all in with the planets. */
 .planet-labels {
   position: fixed;
@@ -846,8 +888,24 @@ body {
 
 /* At the Earth up close the note describes it and credits NASA's images too. */
 .globe-note,
-.tour-credit--earth {
+.tour-credit--earth,
+.near-note,
+.tour-credit--near {
   display: none;
+}
+
+/* Among the nearest stars it describes them and credits only their catalogue. */
+.tour-note.is-near #tour-note-text,
+.tour-note.is-near .tour-credit {
+  display: none;
+}
+
+.tour-note.is-near .near-note {
+  display: inline;
+}
+
+.tour-note.is-near .tour-credit--near {
+  display: block;
 }
 
 .tour-note.is-globe #tour-note-text {
@@ -890,7 +948,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .float[role="button"], .line--top, .back, .touring .back, .marker, .touring .quote,
-  .planet-label, .tour-note, .zoom, .globe-caption { transition: none; }
+  .planet-label, .tour-note, .zoom, .globe-caption, .near-labels, .near-label { transition: none; }
   .float, .eye-glow, .float[role="button"] .tilt, .float[role="button"] .tilt::before,
   .float[role="button"] .eye-glow, .float[role="button"]:hover .eye-glow,
   .float[role="button"]:focus-visible .eye-glow, .marker--earth .marker-ring { animation: none; }

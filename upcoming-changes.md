@@ -2,27 +2,7 @@
 
 ## Phases (current and upcoming)
 
-- **Up next:** 1. Nearest real stars between the galaxy and the solar system
-
-## Nearest real stars between the galaxy and the solar system
-
-**Request** (tour plan, stage 4, optional): an in-between stage with the nearest real stars.
-
-**Builds on:** the tour timeline in `docs/main.js` (`HOLD` at the Sun's marker in the galaxy, then the dive at
-`LEAVE_SUN`, which fades the galaxy out and the solar system in); `skyProg` for star points; `tools/make-stars.py`
-and `docs/stars.bin` as the pattern for a star file; `#tour-note` for the credit.
-
-**Design:** after the hold at the Sun's marker, the galaxy fades and the nearest stars appear round the Sun in 3D,
-at their true distances and colours (brightness by true luminosity and distance). The camera drifts in through
-them, then dives into the Sun as now. A tool in `tools/` makes the star file; the note credits the catalogue.
-Reduced motion: the stage is a still cut like the others.
-
-**Decided** (user, 2026-11-13):
-- **Data:** the HYG catalogue (CC BY-SA 4.0); the derived star file is under that licence, credited on the page and
-  in the README.
-- **Reach:** stars within 20 light-years (about 130).
-- **Pacing:** passed through, adding about 5 s to the tour; 4–6 famous stars (such as Alpha Centauri, Barnard's
-  Star, Sirius) are briefly named with their distance. A click anywhere still goes back.
+- No phases are planned. New requests go in `new.md`.
 
 ## The Moon's phase in its label
 
@@ -205,7 +185,8 @@ with a pointer on the Earth that says "You are here". Use real data where it exi
    motion each step cuts instead of flying.
 3. **Solar system with "You are here":** crossfade into the Sun, the orbits and the 8 planets at their real
    positions for the visitor's date, then ease in towards the Earth, with a "You are here" label pointing at it.
-4. **Later, optional:** an in-between stage with the ~100 nearest real stars (HYG catalogue, CC BY-SA 4.0).
+4. **Later, optional:** an in-between stage with the ~100 nearest real stars (HYG catalogue, CC BY-SA 4.0). Built 2026-11-13
+   (see Done).
 
 **Decisions** (user, 2026-11-12):
 - **Planet style:** glowing dots with thin orbit rings, in plain WebGL. No libraries; the site stays
@@ -216,6 +197,21 @@ with a pointer on the Earth that says "You are here". Use real data where it exi
 - **Planet positions:** live, for the visitor's date.
 
 ## Done
+
+### Nearest real stars between the galaxy and the solar system (2026-11-13)
+
+**Decided** (user): the HYG catalogue (CC BY-SA 4.0); stars within 20 light-years; passed through, adding about 5 s,
+with a few famous stars named with their distance; a click anywhere still goes back.
+**Built** in `tools/make-near-stars.py` (HYG v4.1 to `docs/near-stars.json`: 102 stars with a Gliese number within
+20 light-years, in galactic coordinates, 6 named), `docs/main.js` (the nearest-stars section after Webb: `loadNear()`,
+`drawNear()`; the tour's `NEAR` stage and `INTO_SUN`, `galaxyCamera()`'s `n`, the reduced-motion cuts),
+`docs/index.html` (`#near-labels`, the note's `near-note` and HYG credit) and `docs/style.css` (`.near-label`,
+`.tour-note.is-near`). The stars sit round the galaxy's Sun with galactic north out of the disc, so the camera flies
+on from the galaxy into them, circling a little; the galaxy fades out; the Sun and the named stars get labels (left
+of the dot when the right would run off screen); then the dive into the Sun as before.
+**Checked** in headless Chromium (scratch `near.js`) at 1100×750, 390×844, with reduced motion (Sun, stars, Earth
+cuts) and a click among the stars (flies home); the names, note, credit and status text show during the stage only;
+the Webb and ISS checks still pass with the longer tour; no console errors.
 
 ### The James Webb Space Telescope in the solar system (2026-11-13)
 

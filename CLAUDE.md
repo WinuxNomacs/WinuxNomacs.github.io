@@ -27,7 +27,7 @@ A static GitHub Pages site (<https://winuxnomacs.github.io/>): one page, plain H
   give the sources' numbers), so keep them consistent if the layout changes: the tour flies to `SUN`. Headless Chromium renders it in software at about 30 fps, so judge speed on a real GPU.
 - **Tour:** `main.js` (the tour section) makes the head a button once WebGL works. The tour is one timeline in
   seconds (`tourT`): `FLY` to the Sun (final view `VIEW`, in the disc's coordinates), `HOLD` there with its marker,
-  `DIVE` into it while the galaxy fades out and the solar system fades in, then `ZOOM` towards the Earth
+  `NEAR` among the nearest stars while the galaxy fades out, `DIVE` into the Sun while the solar system fades in, then `ZOOM` towards the Earth
   (`SOLAR_VIEW`). The way back always takes `FLY` seconds. The galaxy shader's `uView` is the camera's orientation
   (identity on the landing page) and `uStarCap` keeps nearby stars small. `body.touring` fades the head and the
   quote and lifts the banner by `--lift`; `#back`, `#sun-marker`, `#earth-marker`, `#planet-labels`, `#tour-note`
@@ -36,7 +36,7 @@ A static GitHub Pages site (<https://winuxnomacs.github.io/>): one page, plain H
   `#planet-labels` are buttons). The camera circles slowly (`orbit`, `ORBIT_SPEED`, the `turn` of
   `solarCamera`), and `fitLabel()` keeps the markers' labels on screen as it does. In the solar system only "← Back" and Esc go back; a click anywhere does so only
   before the dive. Playwright clicks on the head need `force: true`, because
-  the head never stops drifting; a full tour takes about 17 s in headless Chromium.
+  the head never stops drifting; a full tour takes about 22 s in headless Chromium.
 - **Solar system:** `main.js` (the solar system section) has its own small WebGL program (`solarProg`, dots and
   `LINE_LOOP` orbits) and places the planets for the visitor's date from `PLANETS`, NASA JPL's "Approximate
   Positions of the Planets" Table 1 (valid 1800–2050; units are AU, distances true, dot sizes in px). Both programs
@@ -75,5 +75,11 @@ A static GitHub Pages site (<https://winuxnomacs.github.io/>): one page, plain H
   can't be picked when that gap is too small. Its name button may go on its dot's left, or raised
   (`.planet-label.is-left`, `.is-up`), to clear the Earth's label. Picked, its marker shows its distances from the
   Earth and from the Sun (`distanceParts()`).
+- **Nearest stars:** the nearest-stars section of `main.js` (after Webb) draws `docs/near-stars.json` (made by
+  `tools/make-near-stars.py` from the HYG Database, CC BY-SA 4.0, credited in `#tour-note` while it shows) round the
+  galaxy's `SUN`, in galactic coordinates turned into the disc's (`LY_PER_UNIT`), so the galaxy camera flies on
+  into them (`galaxyCamera()`'s `n`). The tour's `NEAR` stage sits between `HOLD` and `DIVE` (`INTO_SUN`): the
+  galaxy fades out, the stars fade in and a few are named (`#near-labels`, the names in the JSON). A click anywhere
+  still goes back until `INTO_SUN`. Under reduced motion the tour cuts to the Sun, the stars, then the Earth.
 - **Eye glow position:** the glow is placed at the lit eye, which sits at 53.0% / 32.8% of the image.
   If the image changes, measure the eye again.

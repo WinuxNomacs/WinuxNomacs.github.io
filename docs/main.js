@@ -1029,6 +1029,114 @@
   }
 
   // ---------------------------------------------------------------------------
+  // Space junk: at the Earth up close, every object tracked in orbit round it (junk.bin, made from CelesTrak's
+  // data by tools/make-junk.py, which describes it), as tiny points: working satellites blue-white, debris, spent
+  // rocket bodies and dead satellites orange. Those with published elements are at their true places at the
+  // moment the visitor arrives; the rest are on their true orbits at made-up places. Each moves on its orbit by
+  // Kepler's laws plus the drift the Earth's flattening (J2) gives it, worked out in the vertex shader; that is
+  // within tens of km of the full model (SGP4) near the data's date, and the elements go stale by more than that
+  // as weeks pass. Like the ISS they run JUNK_SPEED times faster than real (under reduced motion, real time),
+  // hide behind the Earth, and dim in its shadow. The "Space junk" layer button turns them off and on.
+  // ---------------------------------------------------------------------------
+  const JUNK_SPEED = 92.9 * 60 / ISS_LAP; // the ISS's real lap over its lap here
+  const JUNK_STRIDE = 9; // a (Earth radii), e, i, n (radians a day), node, perigee, mean anomaly, epoch (days), kind
+  const JUNK_VERT = `
+    attribute vec4 aOrbit;  // a, e, i, n
+    attribute vec4 aPlace;  // node, argument of perigee, mean anomaly at the epoch, epoch (days from the file's)
+    attribute float aKind;  // 0 working satellite, 1 junk
+    uniform float uDays;    // now, in days from the file's epoch
+    uniform mat3 uEq;       // equatorial axes to the drawing's
+    uniform vec3 uEye;      // the camera from the Earth's centre, in Earth radii
+    uniform vec3 uSun;      // towards the Sun
+    uniform mat3 uView;
+    uniform vec2 uProj;
+    uniform float uDpr;
+    uniform float uGain;
+    varying vec3 vColor;
+    void main() {
+      float a = aOrbit.x, e = aOrbit.y, inc = aOrbit.z, n = aOrbit.w, dt = uDays - aPlace.w;
+      // The Earth's flattening turns the orbit's node back and its perigee round, and changes the mean motion.
+      float si = sin(inc), ci = cos(inc), q = sqrt(1.0 - e * e), p = a * q * q;
+      float k = 1.5 * 1.08263e-3 * n / (p * p);
+      float node = aPlace.x - k * ci * dt;
+      float w = aPlace.y + k * (2.0 - 2.5 * si * si) * dt;
+      float M = mod(aPlace.z + (n + k * q * (1.0 - 1.5 * si * si)) * dt, 6.2831853);
+      float E = e > 0.8 ? 3.14159265 : M; // Kepler's equation by Newton's method
+      for (int j = 0; j < 8; j++) E -= (E - e * sin(E) - M) / (1.0 - e * cos(E));
+      vec2 o = vec2(a * (cos(E) - e), a * q * sin(E)); // in the orbit's plane, from perigee
+      float cw = cos(w), sw = sin(w), cn = cos(node), sn = sin(node);
+      vec3 P = vec3(o.x * cw - o.y * sw, o.x * sw + o.y * cw, 0.0);
+      P = vec3(P.x, P.y * ci, P.y * si);
+      P = uEq * vec3(P.x * cn - P.y * sn, P.x * sn + P.y * cn, P.z);
+      // Hidden when the sight line from the camera meets the Earth first.
+      vec3 d = P - uEye;
+      float dd = dot(d, d), b = dot(uEye, d), disc = b * b - dd * (dot(uEye, uEye) - 0.998);
+      float s = disc > 0.0 ? (-b - sqrt(disc)) / dd : -1.0;
+      float hidden = (s > 0.0 && s < 1.0) ? 1.0 : 0.0;
+      // Dim in the Earth's shadow: the cylinder behind it, away from the Sun.
+      float along = dot(P, uSun);
+      float lit = along > 0.0 ? 1.0 : clamp((length(P - uSun * along) - 1.0) / 0.03, 0.0, 1.0);
+      vec3 v = uView * d;
+      gl_Position = vec4(v.x * uProj.x, v.y * uProj.y, 0.0, -v.z);
+      gl_PointSize = 2.0 * uDpr;
+      vec3 c = aKind < 0.5 ? vec3(0.55, 0.7, 1.0) : vec3(1.0, 0.55, 0.28);
+      vColor = c * (0.08 + 0.32 * lit) * uGain * (1.0 - hidden);
+    }`;
+  const junkProg = link(JUNK_VERT, FRAG, ['aOrbit', 'aPlace', 'aKind']);
+  const ju = uniforms(junkProg, ['uDays', 'uEq', 'uEye', 'uSun', 'uView', 'uProj', 'uDpr', 'uGain']);
+  const junkBuf = gl.createBuffer();
+  const junk = { loading: false, count: 0, epoch: 0, counts: null, start: 0, t0: 0 };
+  // Loads junk.bin into the buffer once, the first time the Earth is visited.
+  function loadJunk() {
+    if (junk.loading) return;
+    junk.loading = true;
+    fetch('junk.bin').then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(r.status))).then((buf) => {
+      const dv = new DataView(buf), count = dv.getUint32(8, true);
+      const counts = [0, 1, 2].map((i) => dv.getUint32(12 + 4 * i, true));
+      const data = new Float32Array(count * JUNK_STRIDE), U = (o) => dv.getUint16(o, true) / 65535;
+      for (let i = 0, o = 24; i < count; i++, o += 18) {
+        const rev = dv.getFloat32(o, true), n = rev * 2 * Math.PI;
+        // From the mean motion, by Kepler's third law: GM is 398600.4418 km³/s², the radius 6378.137 km.
+        const a = Math.cbrt(398600.4418 / ((rev / 86400) * 2 * Math.PI) ** 2) / 6378.137;
+        data.set([a, U(o + 8), U(o + 10) * Math.PI, n, U(o + 12) * 2 * Math.PI, U(o + 14) * 2 * Math.PI,
+                  U(o + 16) * 2 * Math.PI, dv.getFloat32(o + 4, true), i < counts[0] ? 0 : 1], i * JUNK_STRIDE);
+      }
+      gl.bindBuffer(gl.ARRAY_BUFFER, junkBuf);
+      gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+      Object.assign(junk, { count, counts, epoch: dv.getFloat64(0, true) });
+      setJunkNote();
+      if (reduced && atGlobe()) draw(0); // no frame loop to show them
+    }).catch(() => { junk.loading = false; }); // tried again on the next visit
+  }
+  const uEqAxes = [...fromEquatorial([1, 0, 0]), ...fromEquatorial([0, 1, 0]), ...fromEquatorial([0, 0, 1])];
+  // Draws the objects; t is the page's clock (s), gain (0..1) fades them.
+  function drawJunk(cam, view, t, gain) {
+    if (!junk.count || gain <= 0) return;
+    if (!junk.start) { junk.start = Date.now(); junk.t0 = t; }
+    const now = reduced ? Date.now() : junk.start + (t - junk.t0) * 1000 * JUNK_SPEED;
+    const { eye } = earthView(cam);
+    use(junkProg, junkBuf, JUNK_STRIDE, [[4, 0], [4, 4], [1, 8]]);
+    gl.uniform1f(ju.uDays, (now - junk.epoch) / 86400000);
+    gl.uniformMatrix3fv(ju.uEq, false, uEqAxes);
+    gl.uniform3f(ju.uEye, eye[0], eye[1], eye[2]);
+    const sun = norm(solar.bodies[3].pos.map((x) => -x));
+    gl.uniform3f(ju.uSun, sun[0], sun[1], sun[2]);
+    gl.uniformMatrix3fv(ju.uView, false, view);
+    gl.uniform2f(ju.uProj, proj.fx, proj.fy);
+    gl.uniform1f(ju.uDpr, proj.dpr);
+    gl.uniform1f(ju.uGain, gain);
+    gl.drawArrays(gl.POINTS, 0, junk.count);
+  }
+  // The note's words about the objects, once their counts and date are known.
+  function setJunkNote() {
+    const [working, exact, modelled] = junk.counts, all = working + exact + modelled;
+    const day = new Date(junk.epoch).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+    document.getElementById('junk-note').textContent = `${all.toLocaleString('en-US')} tracked objects as of ${day}: ` +
+      `working satellites blue, junk orange (${modelled.toLocaleString('en-US')} at made-up places on their true ` +
+      `orbits), ${reduced ? 'moving at their real speed' : 'sped up like the ISS'}.`;
+  }
+
+  // ---------------------------------------------------------------------------
   // The James Webb Space Telescope in the solar system view. It circles the Sun–Earth L2 point, about 1.5 million km
   // beyond the Earth on the side away from the Sun, in a halo loop that takes about six months, so it goes round
   // the Sun with the Earth. The loop here is modelled: about the size NASA gives (its long way about as long as
@@ -1442,6 +1550,8 @@
     visit.lon = (-new Date().getTimezoneOffset() / 4) * RAD;
     visit.turn = visit.rate = 0;
     visit.goal = 1;
+    loadJunk();
+    junk.start = 0; // the objects start from their true places now
     back.focus({ preventScroll: true });
     if (reduced) { visit.t = EARTH_DIVE; draw(0); } else kick();
   }
@@ -1473,6 +1583,8 @@
     note.classList.toggle('is-shown', amongNear || (tourGoal > 0 && tourT >= IN_SYSTEM));
     note.classList.toggle('is-near', tourT < IN_SYSTEM); // kept while it fades, so its words don't change
     note.classList.toggle('is-globe', close);
+    note.classList.toggle('is-junk', close && layers.junk.on && junk.count > 0);
+    if (globeView) layersBox.style.bottom = `${note.offsetHeight + 26}px`; // just above the note, however long
     globeCaption.classList.toggle('is-shown', globeView);
     if (exploring()) loadGlobe(); // the Earth's images, ready for a visit
     if (globeView) {
@@ -1693,6 +1805,7 @@
       if (p > 0 && globe.ready && !reduced) drawRockets(cam, view, axes, t, part(p, 0.85, 0.15));
       else if (rockets.list.length || rockets.named || launchSite.classList.contains('is-shown')) clearRockets(t);
       // The ISS on its orbit (standing still under reduced motion).
+      if (p > 0 && globe.ready) drawJunk(cam, view, t, part(p, 0.85, 0.15) * layers.junk.shown);
       if (p > 0 && globe.ready) drawIss(cam, view, t, part(p, 0.85, 0.15));
       else issMarker.classList.remove('is-shown');
     }

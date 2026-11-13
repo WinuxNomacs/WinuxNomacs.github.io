@@ -13,7 +13,10 @@ libraries. It is laid out like the real Milky Way as astronomers have measured i
 The head beats like a heart, a double pulse every 2.9 seconds with a gold aura flaring round its outline, to invite
 a click; it rests while the pointer is on it. Clicking the head (or pressing Enter on it) starts a tour. The head and the quote fade away, the banner moves up to
 the top edge, and the camera flies through the galaxy to the Sun's real place in it, about 26,700 light-years from
-the centre, where a marker appears. Then it dives into the Sun, and the solar system fades in: the Sun, the eight
+the centre, where a marker appears. Then it flies in among the nearest real stars: the 102 within 20 light-years
+of the Sun, at their true distances and colours (brightness squeezed so the faint red dwarfs show), with the Sun and
+a few famous neighbours (Alpha Centauri, Barnard's Star, Sirius and others) named with their distance. Then it dives
+into the Sun, and the solar system fades in: the Sun, the eight
 planets and their orbits, with each planet where it really is on the visitor's date (worked out in the browser from
 NASA JPL's Keplerian elements). Behind them is the real night sky: the stars of the Yale Bright Star Catalogue
 that can be seen with the naked eye, in their true places, brightness and colours, and a faint Milky Way band. A
@@ -46,8 +49,8 @@ circles just above the surface on its true orbit (about 420 km up, tilted 51.6°
 along it), sped up so a lap takes two minutes rather than 93, and dimmer in the Earth's shadow; its place on the
 orbit is made up. A small ring and label mark it. "← Back" or Esc returns to the solar system.
 
-"← Back" or Esc flies back from any point; out in the galaxy (before the dive into the Sun), so does a click
-anywhere. With "reduce
+"← Back" or Esc flies back from any point; out in the galaxy and among the nearest stars (before the dive into the
+Sun), so does a click anywhere. With "reduce
 motion" on, each step cuts straight to the next instead of flying, and the sky stays still, with no comets.
 
 ## Files
@@ -60,6 +63,7 @@ Everything the site serves is in `docs/`:
 - `quotes.md`: the quotes, one per `- ` list line
 - `quotes.js`: shows the quotes
 - `stars.bin`: the night sky's stars (see below)
+- `near-stars.json`: the nearest stars (see below)
 - `assets/img/earth-day.webp`, `earth-night.webp`, `earth-clouds.webp`, `moon.webp`: the Earth and Moon maps (see
   below)
 - `assets/img/gargoyle-cutout-707.webp`, `gargoyle-cutout-1414.webp`: the head with its background cut out, at two
@@ -79,6 +83,16 @@ the catalogue file (CDS's `catalog.gz`, or the same data as Harvard's
 ```sh
 curl -O https://cdsarc.cds.unistra.fr/ftp/V/50/catalog.gz
 python3 -I tools/make-stars.py catalog.gz docs/stars.bin
+```
+
+`docs/near-stars.json` holds the 102 stars within 20 light-years from the HYG Database v4.1 (David Nash,
+<https://github.com/astronexus/HYG-Database>, CC BY-SA 4.0). It is adapted from HYG, so it is under CC BY-SA 4.0
+too. `tools/make-near-stars.py` makes it from HYG's `hygdata_v41.csv` and describes the format. It keeps only
+stars with a Gliese catalogue number, which leaves out a few with bad parallaxes:
+
+```sh
+curl -O https://raw.githubusercontent.com/astronexus/HYG-Database/main/hyg/CURRENT/hygdata_v41.csv
+python3 -I tools/make-near-stars.py hygdata_v41.csv docs/near-stars.json
 ```
 
 ## Quotes

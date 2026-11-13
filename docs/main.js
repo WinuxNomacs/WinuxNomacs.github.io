@@ -1070,14 +1070,102 @@
   }
 
   // ---------------------------------------------------------------------------
+  // The nearest stars: the tour's stage between the galaxy and the solar system. near-stars.json (made from the
+  // HYG Database by tools/make-near-stars.py, which describes it) holds the stars within 20 light-years, in
+  // galactic coordinates. They are set round the galaxy's Sun with the galactic centre towards the galaxy's
+  // centre and galactic north up out of the disc, so they turn with the galaxy and the camera flies on into them.
+  // Brightness follows each star's true brightness as seen from the camera, squeezed so the faint red dwarfs
+  // still show; a few are named with their distance (#near-labels).
+  // ---------------------------------------------------------------------------
+  const LY_PER_UNIT = 1360 * 3.26156; // the galaxy's unit is 1.36 kpc
+  const NEAR_SUN = [0, 0, 0, 4.83, 0.65]; // the Sun itself, in the file's form
+  const near = { stars: null, offsets: null, colours: null, labels: [] };
+  const nearData = new Float32Array(120 * SKY_STRIDE);
+  const nearBuf = gl.createBuffer();
+  const nearLabels = document.getElementById('near-labels');
+  function loadNear() {
+    if (near.stars || near.loading) return;
+    near.loading = true;
+    fetch('near-stars.json').then((r) => (r.ok ? r.json() : Promise.reject(r.status))).then((d) => {
+      // Galactic axes in the disc's coordinates (before it turns): x towards the centre, y the way the Sun moves
+      // round it (the galaxy turns towards +angle), z out of the disc.
+      const c = Math.cos(SUN.angle), s = Math.sin(SUN.angle);
+      const X = [-c, 0, -s], Y = [-s, 0, c], Z = [0, 1, 0];
+      near.stars = [NEAR_SUN, ...d.stars.slice(0, nearData.length / SKY_STRIDE - 1)];
+      near.offsets = near.stars.map(([x, y, z]) => [0, 1, 2].map((i) => (x * X[i] + y * Y[i] + z * Z[i]) / LY_PER_UNIT));
+      near.colours = near.stars.map((st) => starColour(st[4]));
+      const label = (body, name, html) => {
+        const el = document.createElement('span');
+        el.className = 'near-label';
+        el.innerHTML = html;
+        nearLabels.append(el);
+        return { el, body, name };
+      };
+      near.labels = [label(0, 'The Sun', 'The Sun'), ...Object.entries(d.names).map(([i, name]) => {
+        const st = near.stars[+i + 1];
+        return label(+i + 1, name, `${name}<small>${Math.hypot(st[0], st[1], st[2]).toFixed(1)} light-years</small>`);
+      })];
+      const [first, second, third] = near.labels.slice(1, 4).map((l) => l.name);
+      nearText = `The nearest stars: ${d.stars.length} within 20 light-years of the Sun, among them ${first}, ` +
+                 `${second} and ${third}.`;
+    }).catch(() => {}); // without the file the tour goes straight on to the Sun
+  }
+  let nearText = '';
+  // Draws the nearest stars round the galaxy camera's Sun, faded by fade (0..1), and places the names when named.
+  function drawNear(cam, angle, fade, named) {
+    if (!near.stars || fade <= 0) { nearLabels.classList.remove('is-shown'); return; }
+    const sunV = sub(cam.sun, cam.eye);
+    const where = near.offsets.map((o) => {
+      const w = toWorld(o[0], o[1], o[2], angle);
+      return [sunV[0] + w[0], sunV[1] + w[1], sunV[2] + w[2]];
+    });
+    let k = 0;
+    near.stars.forEach((st, i) => {
+      const v = where[i], ly = Math.max(0.3, Math.hypot(...v) * LY_PER_UNIT);
+      const mag = st[3] + 5 * Math.log10(ly / 32.6156); // as seen from the camera
+      const size = Math.min(16, Math.max(4.5, 11 - 0.5 * mag)), bright = Math.min(1.6, Math.max(0.5, 1.5 - 0.06 * mag));
+      const col = near.colours[i];
+      nearData.set([v[0], v[1], v[2], col[0] * bright, col[1] * bright, col[2] * bright, size, 0], k);
+      k += SKY_STRIDE;
+    });
+    gl.bindBuffer(gl.ARRAY_BUFFER, nearBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, nearData.subarray(0, k), gl.DYNAMIC_DRAW);
+    use(skyProg, nearBuf, SKY_STRIDE, [[3, 0], [3, 3], [2, 6]]);
+    gl.uniformMatrix3fv(kView, false, viewMatrix(cam));
+    gl.uniform2f(kProj, proj.fx, proj.fy);
+    gl.uniform1f(kDpr, proj.dpr);
+    gl.uniform1f(kGain, fade);
+    gl.uniform1f(kTwinkle, 0);
+    gl.drawArrays(gl.POINTS, 0, k / SKY_STRIDE);
+    // Names, the Sun's then nearest star first, on the dot's right or else its left; each left out when off screen
+    // or crowding one already placed.
+    nearLabels.classList.toggle('is-shown', named);
+    const placed = [], W = innerWidth, H = innerHeight, bottom = H - (W <= 600 ? 120 : 70); // clear of the note
+    for (const l of near.labels) {
+      const v = where[l.body], xy = project([cam.eye[0] + v[0], cam.eye[1] + v[1], cam.eye[2] + v[2]], cam);
+      l.w = l.w || l.el.offsetWidth || 150; // measured once
+      const left = !!xy && xy[0] + 10 + l.w > W - 8;
+      const ok = !!xy && (left ? xy[0] - 10 - l.w > 8 : xy[0] > 8) && xy[1] > 70 && xy[1] < bottom &&
+                 placed.every((p) => Math.abs(p[0] - xy[0]) > 130 || Math.abs(p[1] - xy[1]) > 40);
+      l.el.classList.toggle('is-off', !ok);
+      if (ok) { placed.push(xy); place(l.el, xy); l.el.classList.toggle('is-left', left); }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // The tour: clicking the head flies the camera through the galaxy to the Sun's place in it, dives into the
   // Sun, crossfades to the solar system and eases in towards the Earth: "You are here".
   // ---------------------------------------------------------------------------
   const FLY = 6;    // seconds: the flight through the galaxy to the Sun
   const HOLD = 1.5; // seconds at the Sun, with its marker
-  const DIVE = 3;   // seconds diving into the Sun while the galaxy fades out and the solar system fades in
+  const NEAR = 5;   // seconds flying in among the nearest stars while the galaxy dims
+  const DIVE = 3;   // seconds diving into the Sun while the stars fade out and the solar system fades in
   const ZOOM = 6;   // seconds easing in from the whole solar system towards the Earth
-  const AT_SUN = FLY, LEAVE_SUN = AT_SUN + HOLD, IN_SYSTEM = LEAVE_SUN + DIVE, AT_EARTH = IN_SYSTEM + ZOOM;
+  const AT_SUN = FLY, LEAVE_SUN = AT_SUN + HOLD, INTO_SUN = LEAVE_SUN + NEAR, IN_SYSTEM = INTO_SUN + DIVE;
+  const AT_EARTH = IN_SYSTEM + ZOOM;
+  // Among the nearest stars: the camera comes in from the galaxy view to NEAR_FAR from the Sun, then drifts on to
+  // NEAR_CLOSE (light-years), circling NEAR_TURN radians round the galaxy's axis so the stars move past in depth.
+  const NEAR_FAR = 60, NEAR_CLOSE = 9, NEAR_TURN = 0.7;
   // Where the galaxy flight ends, in the disc's own coordinates: outside the Sun's orbit and above the disc,
   // looking at a point a little past the Sun towards the centre, so the Sun sits low with the core beyond.
   const VIEW = { out: 6, ahead: 0.2, up: 5, lead: 0.35 };
@@ -1151,8 +1239,9 @@
     return [(dot(v, cam.right) * proj.fx / w + 1) / 2 * innerWidth, (1 - dot(v, cam.up) * proj.fy / w) / 2 * innerHeight];
   }
 
-  // The galaxy camera for flight progress s (0..1) and dive progress d (0..1, into the Sun).
-  function galaxyCamera(s, d, angle) {
+  // The galaxy camera for flight progress s (0..1), progress n among the nearest stars (0..1) and dive progress d
+  // (0..1, into the Sun).
+  function galaxyCamera(s, n, d, angle) {
     const sun = toWorld(Math.cos(SUN.angle) * SUN.r, SUN.y, Math.sin(SUN.angle) * SUN.r, angle);
     const a = SUN.angle + VIEW.ahead, r = SUN.r + VIEW.out;
     const end = toWorld(Math.cos(a) * r, VIEW.up, Math.sin(a) * r, angle);
@@ -1160,9 +1249,18 @@
     const endDir = sub(end, focus), endDist = Math.hypot(...endDir);
     // Landing page: straight down -z from DIST away, nudged against the pointer for depth.
     const home = [-current.x * 1.6, current.y * 1.0, 0];
-    const look = lerp3(lerp3(home, focus, ease(Math.min(1, s * 1.4))), sun, d);
-    const dist = logLerp(logLerp(DIST, endDist, s), 0.02, d);
-    const dir = norm(lerp3([0, 0, 1], norm(endDir), s));
+    const inward = ease(part(n, 0, 0.45)); // from the galaxy view in to the nearest stars
+    const look = lerp3(lerp3(home, focus, ease(Math.min(1, s * 1.4))), sun, inward);
+    const nearFar = NEAR_FAR / LY_PER_UNIT, nearClose = NEAR_CLOSE / LY_PER_UNIT;
+    let dist = logLerp(logLerp(DIST, endDist, s), nearFar, inward);
+    if (n > 0.45) dist = logLerp(nearFar, nearClose, (n - 0.45) / 0.55);
+    if (d > 0) dist = logLerp(nearClose, 0.05 / LY_PER_UNIT, d * d);
+    let dir = norm(lerp3([0, 0, 1], norm(endDir), s));
+    if (n > 0) { // circling round the galaxy's axis through the Sun
+      const a = NEAR_TURN * (n + 0.25 * d), axis = toWorld(0, 1, 0, angle);
+      const ca = Math.cos(a), sa = Math.sin(a), along = dot(axis, dir), side = cross(axis, dir);
+      dir = norm(dir.map((v, i) => v * ca + side[i] * sa + axis[i] * along * (1 - ca)));
+    }
     let eye = look.map((v, i) => v + dir[i] * dist);
     // At the Sun the pointer still sways the camera a little (less as it dives in).
     const sway = s * Math.min(1, dist / endDist);
@@ -1338,6 +1436,7 @@
   // Shows what belongs to the current point of the tour.
   function showStage() {
     const atSun = tourGoal > 0 && tourT >= AT_SUN && tourT < LEAVE_SUN;
+    const amongNear = tourGoal > 0 && near.stars && tourT >= LEAVE_SUN + NEAR * 0.4 && tourT < INTO_SUN + DIVE * 0.3;
     const atEarth = tourT >= AT_EARTH;
     const close = diving(), globeView = atGlobe();
     sunMarker.classList.toggle('is-shown', atSun);
@@ -1347,7 +1446,8 @@
     bodyMarker.classList.toggle('is-shown', atEarth && selected !== null);
     zoomBox.classList.toggle('is-shown', exploring());
     labels.inert = !exploring();
-    note.classList.toggle('is-shown', tourGoal > 0 && tourT >= IN_SYSTEM);
+    note.classList.toggle('is-shown', amongNear || (tourGoal > 0 && tourT >= IN_SYSTEM));
+    note.classList.toggle('is-near', tourT < IN_SYSTEM); // kept while it fades, so its words don't change
     note.classList.toggle('is-globe', close);
     globeCaption.classList.toggle('is-shown', globeView);
     if (exploring()) loadGlobe(); // the Earth's images, ready for a visit
@@ -1362,7 +1462,7 @@
     // "You are here" replaces the Earth's name, and the picked body's marker its own.
     for (const { el, body } of labelEls) el.classList.toggle('is-hidden', atEarth && (body === 3 || body === selected));
     const text = globeView ? globeText : close ? '' :
-                 atEarth ? (selected !== null ? bodyText : earthText) : atSun ? sunText : '';
+                 atEarth ? (selected !== null ? bodyText : earthText) : atSun ? sunText : amongNear ? nearText : '';
     if (status.textContent !== text) status.textContent = text;
   }
 
@@ -1378,6 +1478,7 @@
     const now = new Date();
     buildSolar(now);
     setDateTexts(now);
+    loadNear();
     measureBanner();
     zoom.z = 1;
     setZoom(1);
@@ -1399,15 +1500,17 @@
     backRate = Math.max(1, tourT / FLY);
     kick();
   }
-  // Starts the frame loop if it is idle. Under reduced motion each step cuts instead: to the Sun, a pause,
-  // then to the Earth; and straight home.
+  // Starts the frame loop if it is idle. Under reduced motion each step cuts instead: to the Sun, a pause, to
+  // the nearest stars (when they have loaded), another, then to the Earth; and straight home.
   let cutTimer = null;
   function kick() {
     if (reduced) {
       clearTimeout(cutTimer);
       tourT = tourGoal ? AT_SUN : 0;
       draw(0);
-      if (tourGoal) cutTimer = setTimeout(() => { tourT = AT_EARTH; draw(0); }, 3000);
+      const cut = (to, wait, then) => { cutTimer = setTimeout(() => { tourT = to; draw(0); if (then) then(); }, wait); };
+      const toEarth = () => cut(AT_EARTH, 4000);
+      if (tourGoal) cut(INTO_SUN - 0.25, 3000, () => { if (!near.stars) { tourT = AT_EARTH; draw(0); } else toEarth(); });
       else landed();
     } else if (!frame && !document.hidden) {
       frame = requestAnimationFrame(draw);
@@ -1425,8 +1528,8 @@
   back.addEventListener('click', (e) => { e.stopPropagation(); goBack(); });
   document.addEventListener('click', (e) => {
     if (!tourGoal || e.target.closest('a, button')) return;
-    // Out in the galaxy, a click anywhere goes back. In the solar system only "← Back" and Esc do.
-    if (tourT < LEAVE_SUN) { goBack(); return; }
+    // Out in the galaxy and among the nearest stars, a click anywhere goes back. In the solar system only "← Back" and Esc do.
+    if (tourT < INTO_SUN) { goBack(); return; }
     if (!exploring()) return;
     // A click on or near the Sun or a planet picks it; anywhere else does nothing.
     let best = null, bestGap = 24;
@@ -1486,24 +1589,32 @@
     showStage();
     const angle = t * SPIN;
     const s = ease(part(tourT, 0, FLY));
-    const d = ease(part(tourT, LEAVE_SUN, DIVE));
-    const galaxyFade = 1 - ease(part(d, 0.35, 0.55));
+    const nearP = part(tourT, LEAVE_SUN, NEAR);
+    const d = ease(part(tourT, INTO_SUN, DIVE));
+    // The galaxy fades as the camera reaches the nearest stars (its made-up stars would mix with the real ones),
+    // and they fade as it dives into the Sun. Without them, the galaxy stays until the dive.
+    const intoSun = 1 - ease(part(d, 0.35, 0.55));
+    const galaxyFade = near.stars ? 1 - ease(part(nearP, 0.25, 0.35)) : intoSun;
+    const nearFade = ease(part(nearP, 0.3, 0.3)) * intoSun;
     const solarFade = ease(part(d, 0.55, 0.45));
     let solarDim = 1;
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    if (galaxyFade > 0) {
-      const cam = galaxyCamera(s, d, angle);
-      useGalaxy();
-      gl.uniform1f(uAngle, angle);
-      gl.uniform3f(uCam, cam.eye[0], cam.eye[1], cam.eye[2]);
-      gl.uniformMatrix3fv(uView, false, viewMatrix(cam));
-      gl.uniform1f(uGain, (1.7 - 0.5 * s) * galaxyFade);
-      gl.drawArrays(gl.POINTS, 0, n);
+    if (galaxyFade > 0 || nearFade > 0) {
+      const cam = galaxyCamera(s, nearP, d, angle);
+      if (galaxyFade > 0) {
+        useGalaxy();
+        gl.uniform1f(uAngle, angle);
+        gl.uniform3f(uCam, cam.eye[0], cam.eye[1], cam.eye[2]);
+        gl.uniformMatrix3fv(uView, false, viewMatrix(cam));
+        gl.uniform1f(uGain, (1.7 - 0.5 * s) * galaxyFade);
+        gl.drawArrays(gl.POINTS, 0, n);
+      }
       // Keep the Sun's marker on the Sun.
       const xy = tourT > 0 && project(cam.sun, cam);
       if (xy) place(sunMarker, xy);
-    }
+      drawNear(cam, angle, nearFade, tourGoal > 0 && nearP > 0.5 && d < 0.15);
+    } else nearLabels.classList.remove('is-shown');
 
     if (solarFade > 0 && solar.date) {
       if (!reduced) zoom.z += (zoom.target - zoom.z) * (1 - Math.exp(-dt * 8));

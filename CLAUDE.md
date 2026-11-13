@@ -47,7 +47,8 @@ A static GitHub Pages site (<https://winuxnomacs.github.io/>): one page, plain H
   equatorial turned onto the ecliptic (`fromEquatorial`), so they match the planets. Sky point sizes are px, or
   radians when negative (the band's glow). `tools/` is not served.
 - **Head pulse:** once the head is a button it beats (`heartbeat` on `.tilt`'s `scale`, `aura` on `.tilt::before`,
-  `eye-beat` on the eye glow, 2.9 s), stopping on hover, focus and touring. The aura is a blackened copy of
+  `eye-beat` on the eye glow, 2.9 s), stopping on hover, focus and touring. The Earth's marker ring beats the same way (`ring-beat`), resting
+  while its label is hovered or focused. The aura is a blackened copy of
   `gargoyle-cutout-707.webp` with a gold drop-shadow; if the image changes, update its URL and edge fade there.
 - **The Earth up close:** `main.js` (the globe section) draws the Earth and the Moon as textured spheres
   (`globeProg`, plus `airProg` for the Earth's glow) at true size and place, in AU like the solar system but each

@@ -27,6 +27,7 @@ system, past Neptune, and back in. Clicking or tapping the Sun or a planet, or i
 distance: the Sun's from the centre of the Milky Way, a planet's from the Sun on that day. The names are buttons, so
 the keyboard reaches them too, and "+"/"−" keys zoom.
 
+The ring round the Earth beats in time with the head's heartbeat, resting while "You are here" is pointed at.
 Clicking the Earth (its dot or "You are here", at any zoom) flies on down to it: the planets fade and the dot
 grows into a realistic globe seen from space, turned as it is at that moment, so day and night fall where they
 really are, with city lights on the night side, clouds, and the glow of the air round its edge. The camera

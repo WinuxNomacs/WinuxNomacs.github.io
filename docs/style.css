@@ -540,6 +540,26 @@ body {
   outline-offset: 4px;
 }
 
+/* The Earth's ring beats like the head (2.9 s), inviting a click to fly down; it rests while the label is
+   hovered or focused. */
+.marker--earth .marker-ring {
+  animation: ring-beat 2.9s ease-in-out infinite;
+}
+
+.marker--earth:has(.marker-label:hover) .marker-ring,
+.marker--earth:has(.marker-label:focus-visible) .marker-ring {
+  animation: none;
+  border-color: rgb(var(--glow));
+  box-shadow: 0 0 14px rgba(var(--glow), 0.6);
+}
+
+@keyframes ring-beat {
+  0%, 40%, 100% { scale: 1;    border-color: rgba(var(--glow), 0.8); box-shadow: 0 0 12px rgba(var(--glow), 0.4); }
+  8%            { scale: 1.22; border-color: rgb(var(--glow));       box-shadow: 0 0 18px 2px rgba(var(--glow), 0.8); }
+  16%           { scale: 1.04; border-color: rgba(var(--glow), 0.85); box-shadow: 0 0 12px rgba(var(--glow), 0.45); }
+  24%           { scale: 1.15; border-color: rgb(var(--glow));       box-shadow: 0 0 16px 1px rgba(var(--glow), 0.7); }
+}
+
 /* The Moon's marker at the Earth up close: a small ring and a small label. */
 .marker--moon .marker-ring {
   left: -11px;
@@ -819,7 +839,7 @@ body {
   .planet-label, .tour-note, .zoom, .globe-caption { transition: none; }
   .float, .eye-glow, .float[role="button"] .tilt, .float[role="button"] .tilt::before,
   .float[role="button"] .eye-glow, .float[role="button"]:hover .eye-glow,
-  .float[role="button"]:focus-visible .eye-glow { animation: none; }
+  .float[role="button"]:focus-visible .eye-glow, .marker--earth .marker-ring { animation: none; }
   .eye-glow { opacity: 0.5; }
   .tilt { transform: none; }
   .quote, .quote.is-out { transform: none; filter: var(--metal); }

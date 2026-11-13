@@ -2,9 +2,8 @@
 
 ## Phases (current and upcoming)
 
-- **Up next:** 1. The International Space Station round the Earth up close
-- **Then:** 2. The James Webb Space Telescope in the solar system
-- **Later:** 3. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
+- **Up next:** 1. The James Webb Space Telescope in the solar system
+- **Later:** 2. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
 
 ## The Moon's phase in its label
 
@@ -23,28 +22,6 @@ Sun–Moon–Earth angle in `drawGlobe()`.
 
 **Decided** (user, 2026-11-13):
 - **Where in the label:** on its own small line under "The Moon", above the distance and % lit.
-
-## The International Space Station round the Earth up close
-
-**Request** (from `new.md`, 2026-11-13): show the International Space Station orbiting the Earth in the Earth
-up-close view.
-
-**Builds on:** the globe section of `docs/main.js` (the Earth turned to the real moment by `earthAxes()`, drawn
-relative to the camera in Earth radii), the rockets' points for `skyProg` and their hiding behind the Earth
-(`drawRockets()`), and the Moon's marker (`#moon-marker`, `placeMoonMarker()`) for a small ring and label.
-
-**Proposed phase:**
-- The ISS as a small bright point about 420 km up (6.6% of the Earth's radius, so it skims just above the surface
-  at true scale), on its real orbit: tilted 51.6° to the equator, one lap in about 93 minutes. It is hidden while
-  behind the Earth, and dims in the Earth's shadow.
-- A faint line for its orbit, and a small marker like the Moon's: "International Space Station", its height and
-  speed (about 420 km up, 28,000 km/h).
-
-**Decided** (user, 2026-11-13):
-- **Position:** a made-up place on the true orbit (true height, tilt and lap time), so no outside requests and
-  nothing to keep up to date.
-- **Speed:** sped up, one lap in about 2 minutes; its label still gives the real height and speed.
-- **Orbit line:** a faint line, always shown, with the part behind the Earth hidden.
 
 ## The James Webb Space Telescope in the solar system
 
@@ -249,6 +226,17 @@ with a pointer on the Earth that says "You are here". Use real data where it exi
 - **Planet positions:** live, for the visitor's date.
 
 ## Done
+
+### The International Space Station round the Earth up close (2026-11-13)
+
+**Built** in `docs/main.js` (the ISS section after the rockets: `issAt()`, `issOrbit`, `drawIss()`; `earthView()`
+now shared with the rockets), `#iss-marker` in `docs/index.html` and `.marker--iss` in `docs/style.css`. At the
+Earth up close a bright point circles 420 km up on an orbit tilted 51.6° (made-up node, a lap in 120 s), with a
+faint dotted line along the orbit; both hide behind the Earth, and the point dims in the Earth's shadow. Its label:
+"International Space Station", "260 miles (420 km) up, 17,100 mph (27,600 km/h)". Still under reduced motion.
+**Checked** in headless Chromium (scratch `iss.js`) at 1100×750 and 390×844: the marker moves across the globe and
+hides as the ISS goes behind it, the line's far side is hidden, the label fits on a phone; under reduced motion it
+stands still with its label; no console errors.
 
 ### The Moon's phase in its label (2026-11-13)
 

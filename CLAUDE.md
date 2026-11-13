@@ -57,7 +57,9 @@ A static GitHub Pages site (<https://winuxnomacs.github.io/>): one page, plain H
   `visit` (0..`EARTH_DIVE` s) runs the dive: `diveCamera()` carries on from the solar camera and ends over the
   visitor's time zone, then circles (`visit.turn`). The images (`assets/img/earth-*.webp`, `moon.webp`, made by
   `tools/make-earth-images.js`) load when the tour reaches the Earth. "← Back" and Esc from there go back to the
-  solar system (`leaveEarth()`).
+  solar system (`leaveEarth()`). Its layer buttons (`#layers`, each a `data-layer` button with `aria-pressed`) set
+  `layers[name].on`, remembered in `localStorage` (`layer-<name>`); `stepLayers()` fades `shown`, which the
+  shaders use (`uCloudGain` for the clouds).
 - **Rockets:** the rockets section of `main.js` (after the globe section) launches one every 10–20 s at the Earth
   up close from `LAUNCH_SITES` (name, latitude, longitude, heading) on the side facing the camera, and names the
   site (`#launch-site`). `rocketPath()` makes the whole flight in the Earth's own axes once; `drawRockets()` draws

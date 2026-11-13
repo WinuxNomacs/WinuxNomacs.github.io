@@ -618,6 +618,7 @@
     uniform sampler2D uClouds;
     uniform vec3 uSun;      // towards the Sun
     uniform float uEarth;   // 1 for the Earth (lights, clouds, glint, air), 0 for the Moon
+    uniform float uCloudGain; // 0..1: the clouds layer, turned off and on by its button
     uniform float uFade;
     varying vec3 vNormal;
     varying vec3 vToCam;
@@ -631,7 +632,7 @@
         gl_FragColor = vec4(day * (light * 1.15 + 0.02) * uFade, 1.0);
         return;
       }
-      float cloud = texture2D(uClouds, vUv).r * 0.9;
+      float cloud = texture2D(uClouds, vUv).r * 0.9 * uCloudGain;
       vec3 col = day * light * 1.2;
       // Sunlight glints on open water (the map's oceans are a flat deep blue).
       float ocean = smoothstep(0.05, 0.12, day.b - max(day.r, day.g));
@@ -669,7 +670,7 @@
   const airProg = link(SPHERE_VERT, AIR_FRAG, ['aPos', 'aUv']);
   const uniforms = (p, names) => Object.fromEntries(names.map((k) => [k, gl.getUniformLocation(p, k)]));
   const SPHERE_UNIFORMS = ['uModel', 'uRel', 'uShell', 'uView', 'uProj', 'uSun', 'uFade'];
-  const gu = uniforms(globeProg, [...SPHERE_UNIFORMS, 'uEarth', 'uDay', 'uNight', 'uClouds']);
+  const gu = uniforms(globeProg, [...SPHERE_UNIFORMS, 'uEarth', 'uDay', 'uNight', 'uClouds', 'uCloudGain']);
   const au = uniforms(airProg, SPHERE_UNIFORMS);
   gl.useProgram(globeProg);
   gl.uniform1i(gu.uDay, 0);
@@ -677,6 +678,25 @@
   gl.uniform1i(gu.uClouds, 2);
 
   const globe = { loading: false, ready: false, tex: {} };
+  // The Earth up close's layer buttons (#layers): each layer is on or off (remembered in this browser where it
+  // can be) and fades between them (shown, 0..1; stepped in the frame loop).
+  const layers = {};
+  for (const el of document.querySelectorAll('#layers [data-layer]')) {
+    const name = el.dataset.layer, key = `layer-${name}`;
+    let on = true;
+    try { on = localStorage.getItem(key) !== 'off'; } catch (e) { /* no storage: on */ }
+    const layer = layers[name] = { el, on, shown: on ? 1 : 0 };
+    el.setAttribute('aria-pressed', String(on));
+    el.addEventListener('click', () => {
+      layer.on = !layer.on;
+      el.setAttribute('aria-pressed', String(layer.on));
+      try { localStorage.setItem(key, layer.on ? 'on' : 'off'); } catch (e) { /* not remembered */ }
+      if (reduced) { layer.shown = layer.on ? 1 : 0; draw(0); }
+    });
+  }
+  function stepLayers(dt) {
+    for (const l of Object.values(layers)) l.shown = reduced ? +l.on : l.shown + (+l.on - l.shown) * (1 - Math.exp(-dt * 8));
+  }
   function loadGlobe() {
     if (globe.loading) return;
     globe.loading = true;
@@ -762,6 +782,7 @@
       use(globeProg, sphereBuf, 5, [[3, 0], [2, 3]]);
       set(gu, b, 1);
       gl.uniform1f(gu.uEarth, b.earth ? 1 : 0);
+      gl.uniform1f(gu.uCloudGain, layers.clouds.shown);
       [b.earth ? globe.tex.day : globe.tex.moon, globe.tex.night, globe.tex.clouds].forEach((t, i) => {
         gl.activeTexture(gl.TEXTURE0 + i);
         gl.bindTexture(gl.TEXTURE_2D, t);
@@ -1199,6 +1220,7 @@
   const status = document.getElementById('tour-status');
   const bodyMarker = document.getElementById('body-marker');
   const zoomBox = document.getElementById('zoom');
+  const layersBox = document.getElementById('layers');
   const zoomIn = document.getElementById('zoom-in'), zoomOut = document.getElementById('zoom-out');
   const earthDive = document.getElementById('earth-dive');
   const moonMarker = document.getElementById('moon-marker');
@@ -1445,6 +1467,8 @@
     earthMarker.inert = !exploring();
     bodyMarker.classList.toggle('is-shown', atEarth && selected !== null);
     zoomBox.classList.toggle('is-shown', exploring());
+    layersBox.classList.toggle('is-shown', globeView);
+    layersBox.inert = !globeView;
     labels.inert = !exploring();
     note.classList.toggle('is-shown', amongNear || (tourGoal > 0 && tourT >= IN_SYSTEM));
     note.classList.toggle('is-near', tourT < IN_SYSTEM); // kept while it fades, so its words don't change
@@ -1587,6 +1611,7 @@
       if (tourT === 0) landed();
     }
     showStage();
+    stepLayers(dt);
     const angle = t * SPIN;
     const s = ease(part(tourT, 0, FLY));
     const nearP = part(tourT, LEAVE_SUN, NEAR);

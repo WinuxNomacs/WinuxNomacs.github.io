@@ -32,7 +32,11 @@ Clicking the Earth (its dot or "You are here", at any zoom) flies on down to it:
 grows into a realistic globe seen from space, turned as it is at that moment, so day and night fall where they
 really are, with city lights on the night side, clouds, and the glow of the air round its edge. The camera
 circles it slowly. The Moon is there too, in its real place and phase, its distance to scale, so it only comes into
-view now and then; a small ring and label mark it. "← Back" or Esc returns to the solar system.
+view now and then; a small ring and label mark it. Every 10–20 seconds a tiny rocket lifts off from a real launch
+site on the side facing you (Cape Canaveral, Vandenberg, Starbase, Kourou, Baikonur, Wenchang and others), its name
+showing briefly by the pad. It climbs away on a sweeping arc, stretched far beyond a real ascent so it can be seen
+from here, and fades near the screen's edge, its exhaust trail fading after it. "← Back" or Esc returns to the
+solar system.
 
 "← Back" or Esc flies back from any point; out in the galaxy (before the dive into the Sun), so does a click
 anywhere. With "reduce

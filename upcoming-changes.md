@@ -40,15 +40,11 @@ relative to the camera in Earth radii), the rockets' points for `skyProg` and th
 - A faint line for its orbit, and a small marker like the Moon's: "International Space Station", its height and
   speed (about 420 km up, 28,000 km/h).
 
-**Open decisions:**
-- **Where it really is now, or a true orbit at a made-up place?** Where it is now needs its current orbital
-  elements, which change daily: either each visitor's browser fetches them (from CelesTrak, a third-party request
-  that shares the visitor's address with it, and needs a fallback when it fails), or a copy is kept in the repo
-  (it drifts off by minutes along the orbit within a week or two, so it would need refreshing). A made-up place on
-  the true orbit needs neither.
-- **Speed:** real speed (a lap in 93 minutes: it creeps across the globe, about a quarter of the disc in 10
-  minutes), or sped up so a lap takes a minute or two.
-- **Its orbit line:** always shown, or not at all (just the moving point).
+**Decided** (user, 2026-11-13):
+- **Position:** a made-up place on the true orbit (true height, tilt and lap time), so no outside requests and
+  nothing to keep up to date.
+- **Speed:** sped up, one lap in about 2 minutes; its label still gives the real height and speed.
+- **Orbit line:** a faint line, always shown, with the part behind the Earth hidden.
 
 ## The James Webb Space Telescope in the solar system
 

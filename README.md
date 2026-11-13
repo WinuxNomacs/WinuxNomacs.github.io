@@ -30,6 +30,12 @@ system, past Neptune, and back in. Clicking or tapping the Sun or a planet, or i
 distance: the Sun's from the centre of the Milky Way, a planet's from the Sun on that day. The names are buttons, so
 the keyboard reaches them too, and "+"/"−" keys zoom.
 
+Between Mars and Jupiter lies the asteroid belt: the 18,000 brightest asteroids, plus the 2,000 brightest of
+Jupiter's Trojans, the two swarms sharing Jupiter's orbit 60° ahead of it and 60° behind. Each is a faint point where
+it really is on that day, so the belt's spread and the Trojan swarms show. Seen from far off they dim, so the belt
+doesn't blur into a solid ring. Ceres (a dwarf planet), Vesta and Pallas, the biggest, have names and can be picked
+like the planets.
+
 Close to the Earth, a small gold point is the James Webb Space Telescope, with a faint loop round it. Webb circles
 the Sun–Earth L2 point, 1.5 million km beyond the Earth on the side away from the Sun, in a loop that takes about
 six months. That is too close to the Earth to see at this scale, so its place and loop are drawn further out. The
@@ -70,6 +76,7 @@ Everything the site serves is in `docs/`:
 - `stars.bin`: the night sky's stars (see below)
 - `near-stars.json`: the nearest stars (see below)
 - `junk.bin`: the tracked objects round the Earth (see below)
+- `asteroids.bin`: the asteroid belt and Jupiter's Trojans (see below)
 - `assets/img/earth-day.webp`, `earth-night.webp`, `earth-clouds.webp`, `moon.webp`: the Earth and Moon maps (see
   below)
 - `assets/img/gargoyle-cutout-707.webp`, `gargoyle-cutout-1414.webp`: the head with its background cut out, at two
@@ -99,6 +106,22 @@ stars with a Gliese catalogue number, which leaves out a few with bad parallaxes
 ```sh
 curl -O https://raw.githubusercontent.com/astronexus/HYG-Database/main/hyg/CURRENT/hygdata_v41.csv
 python3 -I tools/make-near-stars.py hygdata_v41.csv docs/near-stars.json
+```
+
+## The asteroids
+
+`docs/asteroids.bin` holds the orbits of the 18,000 brightest main-belt asteroids and the 2,000 brightest Jupiter
+Trojans (by absolute magnitude), from NASA JPL's [Small-Body Database](https://ssd.jpl.nasa.gov/tools/sbdb_query.html)
+(public domain), all at one epoch; the page moves each along its orbit to the visitor's date by Kepler's laws.
+That is accurate to a few tens of thousands of km for months, drifting further over the years as the planets
+pull on them, so refresh it now and then. `tools/make-asteroids.py` makes it and describes the layout:
+
+```sh
+mkdir sbdb && cd sbdb
+q='https://ssd-api.jpl.nasa.gov/sbdb_query.api?sb-kind=a&fields=pdes,name,class,H,epoch,a,e,i,om,w,ma&sort=H&full-prec=true&sb-cdata=%7B%22AND%22%3A%5B%22H%7CDF%22%5D%7D'
+curl -o belt.json "$q&sb-class=IMB,MBA,OMB&limit=18000"
+curl -o trojans.json "$q&sb-class=TJN&limit=2000"
+cd .. && python3 -I tools/make-asteroids.py sbdb docs/asteroids.bin
 ```
 
 ## The space junk

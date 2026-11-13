@@ -352,7 +352,7 @@
   const sFade = su('uFade'), sFlat = su('uFlat');
   const solarBuf = gl.createBuffer();
   const useSolar = () => use(solarProg, solarBuf, SOLAR_STRIDE, [[3, 0], [4, 3]]);
-  const solar = { date: null, bodies: [] }; // bodies: { name, pos } for the Sun, each planet, then Webb
+  const solar = { date: null, bodies: [] }; // bodies: { name, pos } for the Sun, each planet, Webb, then Ceres, Pallas, Vesta
 
   // Places everything for the given date: the Sun and planets first, then each orbit as a loop of points.
   function buildSolar(date) {
@@ -379,6 +379,7 @@
     gl.bindBuffer(gl.ARRAY_BUFFER, solarBuf);
     gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
     solar.date = date;
+    placeAsteroids(date);
   }
 
   // ---------------------------------------------------------------------------
@@ -1199,6 +1200,70 @@
   }
 
   // ---------------------------------------------------------------------------
+  // The asteroids: the brightest of the main belt between Mars and Jupiter and of Jupiter's Trojans (the swarms
+  // 60° ahead of and behind it), from asteroids.bin (made by tools/make-asteroids.py from NASA JPL's Small-Body
+  // Database, which documents the layout). Each is where it is on the visitor's date, by Kepler's laws from its
+  // orbit, as a faint dot for the solar system's program. Ceres, Pallas and Vesta, first in the file, join
+  // solar.bodies after Webb (from CERES on), so they get names and can be picked.
+  // ---------------------------------------------------------------------------
+  const CERES = WEBB + 1;
+  const BIG_THREE = [{ name: 'Ceres', full: 'Ceres, a dwarf planet' }, { name: 'Pallas' }, { name: 'Vesta' }];
+  const ASTEROID_COLOUR = [0.34, 0.31, 0.27], ASTEROID_SIZE = 2.4;
+  const BIG_COLOUR = [0.8, 0.74, 0.64], BIG_SIZE = 6;
+  const asteroids = { orbits: null, count: 0, belt: 0, epoch: 0, drawn: 0 };
+  const asteroidBuf = gl.createBuffer();
+  function loadAsteroids() {
+    if (asteroids.orbits || asteroids.loading) return;
+    asteroids.loading = true;
+    fetch('asteroids.bin').then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(r.status))).then((buf) => {
+      const v = new DataView(buf), u = (p) => v.getUint16(p, true) / 65535;
+      asteroids.epoch = v.getFloat64(0, true);
+      asteroids.belt = v.getUint32(8, true);
+      asteroids.count = asteroids.belt + v.getUint32(12, true);
+      // a, e, inclination, node, argument of perihelion, mean anomaly at the epoch (degrees)
+      const o = new Float32Array(asteroids.count * 6);
+      for (let i = 0, p = 16; i < asteroids.count; i++, p += 14) {
+        o.set([v.getFloat32(p, true), u(p + 4), u(p + 6) * 180, u(p + 8) * 360, u(p + 10) * 360, u(p + 12) * 360], i * 6);
+      }
+      asteroids.orbits = o;
+      if (solar.date) { placeAsteroids(solar.date); setDateTexts(solar.date); redraw(); }
+    }).catch(() => {}); // without the file the solar system has no asteroids
+  }
+  // Places them for the date (call after buildSolar(date), which empties the bodies after Webb).
+  function placeAsteroids(date) {
+    if (!asteroids.orbits) return;
+    const days = date.getTime() / 86400000 + 2440587.5 - asteroids.epoch, o = asteroids.orbits;
+    const data = new Float32Array(asteroids.count * SOLAR_STRIDE), none = [0, 0, 0, 0, 0, 0];
+    solar.bodies.length = CERES;
+    for (let i = 0; i < asteroids.count; i++) {
+      const [a, e, inc, node, w, m] = o.subarray(i * 6, i * 6 + 6);
+      const M = m + (0.9856076686 / Math.pow(a, 1.5)) * days; // degrees a day by Kepler's third law
+      // In orbitPoint's form: [a, e, I, mean longitude, longitude of perihelion, node], not changing.
+      const pos = fromEcliptic(orbitPoint([a, e, inc, M + w + node, w + node, node], none, 0));
+      const big = i < BIG_THREE.length, c = big ? BIG_COLOUR : ASTEROID_COLOUR;
+      data.set([pos[0], pos[1], pos[2], c[0], c[1], c[2], big ? BIG_SIZE : ASTEROID_SIZE], i * SOLAR_STRIDE);
+      if (big) solar.bodies.push({ ...BIG_THREE[i], pos });
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, asteroidBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+    asteroids.drawn = asteroids.count;
+  }
+  // Draws them with the solar system's program (in use, its uniforms set, faded by fade); the three named ones
+  // last, on top. Seen from far off the dots crowd into a solid ring, so they dim as the belt shrinks on screen
+  // (below ASTEROID_CROWD px per AU at the Sun's distance), and faster once it is tiny (below ASTEROID_TINY).
+  const ASTEROID_CROWD = 80, ASTEROID_TINY = 30;
+  function drawAsteroids(cam, fade) {
+    const w = dot(cam.eye, cam.back); // the Sun's distance in front of the camera
+    if (!asteroids.drawn || w <= 0) return;
+    const perAU = (proj.fx / w) * innerWidth / 2;
+    use(solarProg, asteroidBuf, SOLAR_STRIDE, [[3, 0], [4, 3]]);
+    gl.uniform1f(sFade, fade * Math.min(1, perAU / ASTEROID_CROWD) * Math.min(1, perAU / ASTEROID_TINY));
+    gl.drawArrays(gl.POINTS, BIG_THREE.length, asteroids.drawn - BIG_THREE.length);
+    gl.uniform1f(sFade, fade);
+    gl.drawArrays(gl.POINTS, 0, BIG_THREE.length);
+  }
+
+  // ---------------------------------------------------------------------------
   // The nearest stars: the tour's stage between the galaxy and the solar system. near-stars.json (made from the
   // HYG Database by tools/make-near-stars.py, which describes it) holds the stars within 20 light-years, in
   // galactic coordinates. They are set round the galaxy's Sun with the galactic centre towards the galaxy's
@@ -1471,14 +1536,14 @@
   }
 
   // Planet names, made once. Each is a button that picks its body (body: its index in solar.bodies).
-  const labelEls = PLANETS.map(([name]) => name).concat('Sun', 'James Webb').map((name, k) => {
+  const labelEls = PLANETS.map(([name]) => name).concat('Sun', 'James Webb', ...BIG_THREE.map((b) => b.name)).map((name, k) => {
     const el = document.createElement('button');
     el.type = 'button';
     el.className = 'planet-label';
     el.dataset.name = name;
     el.textContent = name;
     el.setAttribute('aria-pressed', 'false');
-    const body = name === 'Sun' ? 0 : name === 'James Webb' ? WEBB : k + 1;
+    const body = name === 'Sun' ? 0 : k <= PLANETS.length ? k + 1 : k; // the Sun's and Webb's names follow the planets'
     el.addEventListener('click', (e) => { e.stopPropagation(); select(body); });
     labels.appendChild(el);
     return { name, el, body };
@@ -1507,7 +1572,8 @@
     earthText = `You are here: the Earth, ${distance}, with the Sun and the planets where they are on ${day}.`;
     document.getElementById('earth-date').textContent = `The Earth, ${day}`;
     document.getElementById('earth-distance').replaceChildren(...spans(parts));
-    noteText.textContent = `The planets where they are on ${day}. Distances to scale; planets drawn larger. ` +
+    const many = asteroids.drawn ? ` and ${asteroids.drawn.toLocaleString('en-GB')} asteroids` : '';
+    noteText.textContent = `The planets${many} where they are on ${day}. Distances to scale; planets drawn larger. ` +
                        'Pick one, or the Sun, to see its distance.';
   }
 
@@ -1615,6 +1681,7 @@
     buildSolar(now);
     setDateTexts(now);
     loadNear();
+    loadAsteroids();
     measureBanner();
     zoom.z = 1;
     setZoom(1);
@@ -1791,6 +1858,7 @@
         for (let i = 0; i < PLANETS.length; i++) gl.drawArrays(gl.LINE_LOOP, bodies + i * ORBIT_STEPS, ORBIT_STEPS);
         gl.uniform1f(sFlat, 0);
         gl.drawArrays(gl.POINTS, 0, bodies);
+        drawAsteroids(cam, solarFade * solarDim);
         const webbShown = drawWebb(cam);
         bodyXY = solar.bodies.map((b) => project(b.pos, cam));
         if (!webbShown) bodyXY[WEBB] = null;
@@ -1833,8 +1901,8 @@
         !(p[0] > box[0] - 6 && p[0] < box[2] + 6 && p[1] > box[1] - 6 && p[1] < box[3] + 6)) &&
       boxes.every((o) => box[0] > o[2] + 4 || box[2] < o[0] - 4 || box[1] > o[3] || box[3] < o[1]);
     // labelEls: the Sun, the planets from Neptune in, then Webb, whose name may go on its dot's left (it sits just
-    // by the Earth, whose marker's label is on the right).
-    for (const k of [8, 7, 6, 5, 4, 3, 2, 1, 0, 9]) {
+    // by the Earth, whose marker's label is on the right), then Ceres, Pallas and Vesta.
+    for (const k of [8, 7, 6, 5, 4, 3, 2, 1, 0, 9, 10, 11, 12]) {
       const { el, body } = labelEls[k];
       const xy = bodyXY[body];
       let clear = xy && xy[0] > -20 && xy[0] < innerWidth && xy[1] > 0 && xy[1] < innerHeight, left = false, up = false;

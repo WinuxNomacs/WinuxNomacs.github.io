@@ -2,10 +2,9 @@
 
 ## Phases (current and upcoming)
 
-- **Up next:** 1. The Moon's phase in its label
-- **Then:** 2. The International Space Station round the Earth up close; 3. The James Webb Space Telescope in the
-  solar system
-- **Later:** 4. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
+- **Up next:** 1. The International Space Station round the Earth up close
+- **Then:** 2. The James Webb Space Telescope in the solar system
+- **Later:** 3. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
 
 ## The Moon's phase in its label
 
@@ -254,6 +253,17 @@ with a pointer on the Earth that says "You are here". Use real data where it exi
 - **Planet positions:** live, for the visitor's date.
 
 ## Done
+
+### The Moon's phase in its label (2026-11-13)
+
+**Built** in `docs/main.js` (`moonPhase()`, called from `drawGlobe()`; `placeMoonMarker()` fills it in) and
+`#moon-phase` in `docs/index.html`. The Moon's label at the Earth up close reads "The Moon", then its phase on its
+own small line, then its distance and how much is lit. The phase comes from the Moon's angle east of the Sun along
+the ecliptic; the four main phases are named within 12° (about a day) of the moment.
+**Checked** in headless Chromium (scratch `phase.js`, the page's clock shifted) for today (Waxing crescent, 17% lit),
++4 days (First quarter), +22 (Waning crescent) and +26 (New Moon), and with the page's own formulas (scratch
+`phasefn.js`) across the month, including Waxing gibbous, Full Moon on 24 November and Waning gibbous; no console
+errors.
 
 ### Rockets launching from the Earth up close (2026-11-13)
 

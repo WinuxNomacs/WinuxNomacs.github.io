@@ -59,7 +59,14 @@ A static GitHub Pages site (<https://winuxnomacs.github.io/>): one page, plain H
   `tools/make-earth-images.js`) load when the tour reaches the Earth. "← Back" and Esc from there go back to the
   solar system (`leaveEarth()`). Its layer buttons (`#layers`, each a `data-layer` button with `aria-pressed`) set
   `layers[name].on`, remembered in `localStorage` (`layer-<name>`); `stepLayers()` fades `shown`, which the
-  shaders use (`uCloudGain` for the clouds).
+  shaders use (`uCloudGain` for the clouds, the gain of the space junk).
+- **Space junk:** the space junk section of `main.js` (after the ISS) draws `docs/junk.bin` (made by
+  `tools/make-junk.py` from CelesTrak's catalogue and elements, which documents the layout) at the Earth up close
+  with its own program (`junkProg`): each object's orbit is a vertex's attributes, and the vertex shader moves it
+  (Kepler plus J2 drift), hides it behind the Earth and dims it in the shadow. Time runs `JUNK_SPEED` times faster
+  from the moment of the visit (real time under reduced motion). It loads on the first visit (`loadJunk()`); the
+  note's `#junk-note` gives the counts and the data's date. The ISS and the modules docked to it are left out
+  of the file, since the page draws its own ISS.
 - **Rockets:** the rockets section of `main.js` (after the globe section) launches one every 10–20 s at the Earth
   up close from `LAUNCH_SITES` (name, latitude, longitude, heading) on the side facing the camera, and names the
   site (`#launch-site`). `rocketPath()` makes the whole flight in the Earth's own axes once; `drawRockets()` draws

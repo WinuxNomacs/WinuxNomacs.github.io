@@ -2,35 +2,7 @@
 
 ## Phases (current and upcoming)
 
-- **Up next:** 1. The cloud of space junk round the Earth up close
-
-## The cloud of space junk round the Earth up close
-
-**Request** (user, 2026-11-13): if possible, accurately show the cloud of near-Earth space junk.
-
-**Builds on:** the ISS section (`issOrbit`, points for `skyProg` in Earth radii relative to the camera,
-`earthView()` for hiding what the Earth hides), the rockets' edge fade, and `tools/` scripts that make data files.
-
-**What "accurate" can mean here:** the tracked objects (from about 10 cm up in low orbit) have published orbital
-elements (GP data, "TLEs", from CelesTrak, from the US Space Force catalogue). Propagated with SGP4, each lands at
-its real place for a moment, so the shells over low orbit, the clusters from the big break-ups and the ring at
-geostationary height come out as they really are. Untracked debris (the far more numerous small fragments) has no
-positions and could only be shown as a modelled density. Elements go stale: positions along the orbit drift by
-kilometres a day, while the shape of the cloud stays true for months.
-
-**Proposed phase:**
-- A tool in `tools/` downloads the elements and writes a compact data file for `docs/`, stamped with its date.
-- SGP4 written into `main.js` (no library), positions for the visitor's moment, drawn as tiny points (sizes
-  exaggerated, places true), hidden behind the Earth; a label/caption with the count and the data's date.
-- It works alongside the clouds control (a "space junk" on/off beside it).
-
-**Decided** (user, 2026-11-13):
-- **Objects:** everything tracked, colour-coded: debris, spent rocket bodies and dead satellites in one colour,
-  working satellites (Starlink and the rest) in another.
-- **Freshness:** a snapshot data file in the repo, refreshed by hand with the tool; the caption gives its date. No
-  Actions, no outside requests from visitors.
-- **Speed:** the same speed-up as the ISS (a low-orbit lap in about two minutes), true places at the moment of
-  arrival.
+- No phases are planned. New requests go in `new.md`.
 
 ## The Moon's phase in its label
 
@@ -225,6 +197,23 @@ with a pointer on the Earth that says "You are here". Use real data where it exi
 - **Planet positions:** live, for the visitor's date.
 
 ## Done
+
+### The cloud of space junk round the Earth up close (2026-11-13)
+
+**Decided** (user): everything tracked, colour-coded (working satellites against debris, rocket bodies and dead
+satellites); a snapshot refreshed by hand, its date on the page; sped up like the ISS. After the data was checked
+(of 35,504 tracked objects only about 19,600 have freely published elements; Space-Track's full set may not be
+republished): the rest shown on their true orbits from CelesTrak's catalogue at made-up places, said in the note.
+**Built** in `tools/make-junk.py` (CelesTrak's `satcat.csv` and five GP groups to `docs/junk.bin`: 16,881 working,
+3,253 other with elements, 15,294 modelled, data of 13 November 2026), `docs/main.js` (the space junk section after
+the ISS: `junkProg`, Kepler plus J2 in the vertex shader, hidden behind the Earth, dimmed in its shadow;
+`loadJunk()`, `drawJunk()`, `setJunkNote()`), `docs/index.html` (the "Space junk" layer button, `#junk-note`, the
+CelesTrak credit) and `docs/style.css` (`.tour-note.is-junk`). The layer row sits just above the note, however
+long it is. Not measured against SGP4 (no `sgp4` package here): the left-out short-period terms are of the order
+of 10–20 km in low orbit.
+**Checked** in headless Chromium (scratch `junk.js`, `clouds.js`) at 1100×750, 390×844 and with reduced motion: the
+swarm shows round the globe and streams on, hides behind the Earth, the button turns it and its note line off
+and on; under reduced motion it appears once loaded and the note says it moves at real speed; no console errors.
 
 ### A clouds on/off control at the Earth up close (2026-11-13)
 

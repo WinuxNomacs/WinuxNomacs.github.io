@@ -47,8 +47,12 @@ showing briefly by the pad. It climbs away on a sweeping arc, stretched far beyo
 from here, and fades near the screen's edge, its exhaust trail fading after it. The International Space Station
 circles just above the surface on its true orbit (about 420 km up, tilted 51.6° to the equator, with a faint line
 along it), sped up so a lap takes two minutes rather than 93, and dimmer in the Earth's shadow; its place on the
-orbit is made up. A small ring and label mark it. A "Clouds" button at the bottom right turns the cloud layer off and
-on (the browser remembers the choice). "← Back" or Esc returns to the solar system.
+orbit is made up. A small ring and label mark it. Round it all swarms the space junk: every object tracked in orbit,
+about 35,000, as tiny points, working satellites blue-white and debris, spent rocket bodies and dead satellites
+orange, hidden behind the Earth and dim in its shadow. About 20,000 have published orbits and start from their true
+places; the rest are on their true orbits (height, tilt and shape) at made-up places. They are sped up like the
+ISS. Buttons at the bottom right turn the clouds and the space junk off and on (the browser remembers the choice).
+"← Back" or Esc returns to the solar system.
 
 "← Back" or Esc flies back from any point; out in the galaxy and among the nearest stars (before the dive into the
 Sun), so does a click anywhere. With "reduce
@@ -65,6 +69,7 @@ Everything the site serves is in `docs/`:
 - `quotes.js`: shows the quotes
 - `stars.bin`: the night sky's stars (see below)
 - `near-stars.json`: the nearest stars (see below)
+- `junk.bin`: the tracked objects round the Earth (see below)
 - `assets/img/earth-day.webp`, `earth-night.webp`, `earth-clouds.webp`, `moon.webp`: the Earth and Moon maps (see
   below)
 - `assets/img/gargoyle-cutout-707.webp`, `gargoyle-cutout-1414.webp`: the head with its background cut out, at two
@@ -94,6 +99,23 @@ stars with a Gliese catalogue number, which leaves out a few with bad parallaxes
 ```sh
 curl -O https://raw.githubusercontent.com/astronexus/HYG-Database/main/hyg/CURRENT/hygdata_v41.csv
 python3 -I tools/make-near-stars.py hygdata_v41.csv docs/near-stars.json
+```
+
+## The space junk
+
+`docs/junk.bin` holds the objects tracked in orbit round the Earth, from [CelesTrak](https://celestrak.org): the
+catalogue (`satcat.csv`) for every object, and the published orbital elements of the working satellites, the
+unidentified "analyst" objects and three big break-up clouds. `tools/make-junk.py` makes it and describes the
+layout. The date of the download is shown on the page; positions drift from the truth by more each week, so
+refresh it now and then (one download of each file, well within CelesTrak's fair use):
+
+```sh
+mkdir celestrak && cd celestrak
+curl -o satcat.csv https://celestrak.org/pub/satcat.csv
+for g in active analyst fengyun-1c-debris iridium-33-debris cosmos-2251-debris; do
+  curl -o "gp-$g.json" "https://celestrak.org/NORAD/elements/gp.php?GROUP=$g&FORMAT=json"; sleep 2
+done
+cd .. && python3 -I tools/make-junk.py celestrak docs/junk.bin
 ```
 
 ## Quotes

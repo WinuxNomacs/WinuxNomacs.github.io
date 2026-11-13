@@ -954,6 +954,8 @@ body {
 /* At the Earth up close the note describes it and credits NASA's images too. */
 .globe-note,
 .tour-credit--earth,
+.junk-note,
+.tour-credit--junk,
 .near-note,
 .tour-credit--near {
   display: none;
@@ -982,6 +984,12 @@ body {
 }
 
 .tour-note.is-globe .tour-credit--earth {
+  display: block;
+}
+
+/* With the space junk shown, a line about it and its credit. */
+.tour-note.is-junk .junk-note,
+.tour-note.is-junk .tour-credit--junk {
   display: block;
 }
 

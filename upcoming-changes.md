@@ -2,7 +2,43 @@
 
 ## Phases (current and upcoming)
 
-- **Later:** 1. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
+- **Up next:** 1. Rockets launching from the Earth up close
+- **Later:** 2. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
+
+## Rockets launching from the Earth up close
+
+**Request** (user, 2026-11-13): at the Earth up close, small rockets take off from Houston, Cape Canaveral and
+other known launch sites, and fade away as they reach the screen edges. They stay small so they don't detract from
+the Earth, and each rocket's trail fades away after it.
+
+**Builds on:**
+- The globe section of `docs/main.js`. `earthAxes()` turns the Earth to the real moment, and spheres are drawn
+  relative to the camera in their own radii (`uRel`), so a point fixed on the surface can be placed the same way.
+- The sky's comets (`launchComet`, `stepComet`): a random launch every few seconds and a trail that fades along its
+  length.
+- `atGlobe()` and `visit` in the tour section, for when the Earth is up close; `#moon-marker` for a small label
+  placed on screen each frame.
+
+**Phase:**
+- **Sites:** real launch sites at their true latitude and longitude, turning with the globe. Only sites on the
+  side facing the camera launch, and never right at the edge of the disc.
+- **The rocket:** a tiny bright point (2–3 px), warm white like an engine flame. It rises straight up, then tips
+  over in its site's usual direction (east from Florida, south from Vandenberg for polar orbits), speeding up.
+- **The path:** a real rocket reaching orbit climbs only about 3% of the Earth's radius, which would be invisible
+  from here. So the climb is stretched into a sweeping arc that leaves the globe and fades near the screen edge,
+  about 6–10 s per launch.
+- **The trail:** a thin, faint exhaust line, brightest near the rocket and fading along its length. It dissolves
+  over a few seconds after the rocket is gone.
+- **Behind the Earth:** a rocket or trail that passes behind the globe is hidden.
+- **Reduced motion:** no rockets.
+
+**Decisions** (user, 2026-11-13):
+- **Houston:** it has no launch pad (it is Mission Control), so Starbase at Boca Chica, Texas, stands in for it.
+- **Sites:** major spaceports worldwide: Cape Canaveral/Kennedy, Vandenberg, Wallops, Starbase, Kourou, Baikonur,
+  Plesetsk, Vostochny, Jiuquan, Taiyuan, Wenchang, Xichang, Sriharikota, Tanegashima, Mahia (New Zealand).
+- **How often:** about one launch every 10–20 s, so usually one rocket at a time.
+- **Labels:** the site's name, e.g. "Cape Canaveral", shows small and faint by the site at liftoff and fades after
+  a few seconds.
 
 ## Dive into a realistic Earth seen from space
 

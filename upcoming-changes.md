@@ -2,27 +2,7 @@
 
 ## Phases (current and upcoming)
 
-- **Up next:** 1. The asteroid belt and Jupiter's Trojans in the solar system
-
-## The asteroid belt and Jupiter's Trojans in the solar system
-
-**Request** (user, 2026-11-13): add the asteroid belt between Mars and Jupiter.
-
-**Builds on:** the solar system section of `docs/main.js` (`PLANETS`, `buildSolar()` placing bodies for the date
-by Kepler's laws, `solarProg` dots, `solar.bodies`, `select()`, `placeLabels()`, `distanceParts()`), and the
-`tools/` pattern for data files.
-
-**Design:** a tool downloads the brightest asteroids' orbits from NASA JPL's Small-Body Database (public domain)
-and writes a compact file; the page places each at its true position for the visitor's date (Kepler's laws, as
-for the planets) and draws them as faint points, so the belt's real gaps and clumps show. Loaded when the tour
-reaches the solar system; credited in the note.
-
-**Decided** (user, 2026-11-13):
-- **Data:** real asteroids from JPL's Small-Body Database, each at its true place for the date.
-- **Count:** about 20,000 (the brightest).
-- **Extras:** Ceres, Vesta and Pallas get name buttons like the planets (picked: ringed, with the distance from
-  the Sun, Ceres noted as a dwarf planet); Jupiter's Trojans (the two swarms 60° ahead of and behind Jupiter) are
-  included. No on/off button.
+- **Up next:** nothing planned; new requests go in `new.md`.
 
 ## The Moon's phase in its label
 
@@ -217,6 +197,26 @@ with a pointer on the Earth that says "You are here". Use real data where it exi
 - **Planet positions:** live, for the visitor's date.
 
 ## Done
+
+### The asteroid belt and Jupiter's Trojans in the solar system (2026-11-13)
+
+**Decided** (user):
+- **Data:** real asteroids from JPL's Small-Body Database, each at its true place for the date.
+- **Count:** about 20,000 (the brightest).
+- **Extras:** Ceres, Vesta and Pallas get name buttons like the planets (picked: ringed, with the distance from
+  the Sun, Ceres noted as a dwarf planet); Jupiter's Trojans (the two swarms 60° ahead of and behind Jupiter) are
+  included. No on/off button.
+**Built** in `tools/make-asteroids.py` (two JPL Small-Body Database queries to `docs/asteroids.bin`: 17,991 belt
+asteroids and 1,999 Trojans by absolute magnitude, all at epoch JD 2461200.5; 10 long-lost ones with other epochs
+left out; 280 KB), `docs/main.js` (the asteroids section after Webb: `loadAsteroids()`, `placeAsteroids()` through
+`orbitPoint()`, `drawAsteroids()` dimming them as the belt shrinks on screen; Ceres, Pallas and Vesta as
+`solar.bodies[CERES..]` with name buttons, Ceres "a dwarf planet"; the note counts them), `docs/index.html` and
+`docs/style.css` (the JPL credit, hidden at the globe).
+**Checked** against JPL Horizons for 13 November 2026: Ceres and Vesta within about 25,000 km; the Trojans
+average 67° ahead of and 58° behind Jupiter's mean longitude. In headless Chromium (scratch `asteroids.js`) at
+1100×750, 390×844 and with reduced motion: the belt and both swarms show at every zoom without blurring into a
+solid ring, the three names appear where there is room, picking Ceres and Vesta shows their distances; the
+Webb and space junk checks still pass; no console errors.
 
 ### The cloud of space junk round the Earth up close (2026-11-13)
 

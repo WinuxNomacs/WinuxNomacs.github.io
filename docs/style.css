@@ -979,6 +979,10 @@ body {
   display: none;
 }
 
+.tour-note.is-globe .tour-credit--asteroids {
+  display: none;
+}
+
 .tour-note.is-globe .globe-note {
   display: inline;
 }

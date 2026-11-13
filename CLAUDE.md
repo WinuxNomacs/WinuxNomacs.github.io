@@ -84,6 +84,12 @@ A static GitHub Pages site (<https://winuxnomacs.github.io/>): one page, plain H
   can't be picked when that gap is too small. Its name button may go on its dot's left, or raised
   (`.planet-label.is-left`, `.is-up`), to clear the Earth's label. Picked, its marker shows its distances from the
   Earth and from the Sun (`distanceParts()`).
+- **Asteroids:** the asteroids section of `main.js` (after Webb) draws `docs/asteroids.bin` (made by
+  `tools/make-asteroids.py` from NASA JPL's Small-Body Database, which documents the layout) in the solar system:
+  `placeAsteroids()` (called by `buildSolar()`, and on load) moves each from the file's epoch to the date with
+  `orbitPoint()` into its own buffer for `solarProg`; `drawAsteroids()` dims them as the belt shrinks on screen
+  (`ASTEROID_CROWD`, `ASTEROID_TINY`). Ceres, Pallas and Vesta, first in the file, are `solar.bodies[CERES..]`
+  after Webb, with name buttons. Loaded by `go()` (`loadAsteroids()`); credited in `#tour-note`.
 - **Nearest stars:** the nearest-stars section of `main.js` (after Webb) draws `docs/near-stars.json` (made by
   `tools/make-near-stars.py` from the HYG Database, CC BY-SA 4.0, credited in `#tour-note` while it shows) round the
   galaxy's `SUN`, in galactic coordinates turned into the disc's (`LY_PER_UNIT`), so the galaxy camera flies on

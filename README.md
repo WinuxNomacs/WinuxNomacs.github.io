@@ -27,6 +27,12 @@ system, past Neptune, and back in. Clicking or tapping the Sun or a planet, or i
 distance: the Sun's from the centre of the Milky Way, a planet's from the Sun on that day. The names are buttons, so
 the keyboard reaches them too, and "+"/"−" keys zoom.
 
+Close to the Earth, a small gold point is the James Webb Space Telescope, with a faint loop round it. Webb circles
+the Sun–Earth L2 point, 1.5 million km beyond the Earth on the side away from the Sun, in a loop that takes about
+six months. That is too close to the Earth to see at this scale, so its place and loop are drawn further out. The
+loop is modelled: about Webb's size, at a made-up point along it. Picking Webb shows its distance from the Earth
+(say "about 1.5 million km") and from the Sun. Zoomed out, it fades into the Earth's dot.
+
 The ring round the Earth beats in time with the head's heartbeat, resting while "You are here" is pointed at.
 Clicking the Earth (its dot or "You are here", at any zoom) flies on down to it: the planets fade and the dot
 grows into a realistic globe seen from space, turned as it is at that moment, so day and night fall where they

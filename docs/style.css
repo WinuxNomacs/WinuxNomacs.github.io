@@ -673,6 +673,21 @@ body {
   margin-left: calc(18px - 0.35em);
 }
 
+/* On its dot's left: shifted back by its width and the gap the margin made on the right. */
+.planet-label.is-left {
+  translate: calc(-100% - 2 * (10px - 0.35em)) 0;
+}
+
+.planet-label.is-left.is-up {
+  translate: calc(-100% - 2 * (10px - 0.35em)) calc(-50% - 2px);
+}
+
+/* Webb's distances from the Earth and from the Sun go on two lines. */
+.marker--body.is-webb #body-distance span:nth-of-type(2)::after {
+  content: '';
+  display: block;
+}
+
 /* Hidden names can't be clicked or reached by the keyboard. */
 .planet-label.is-off,
 .planet-label.is-hidden {

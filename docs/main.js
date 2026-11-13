@@ -352,7 +352,7 @@
   const sFade = su('uFade'), sFlat = su('uFlat');
   const solarBuf = gl.createBuffer();
   const useSolar = () => use(solarProg, solarBuf, SOLAR_STRIDE, [[3, 0], [4, 3]]);
-  const solar = { date: null, bodies: [] }; // bodies: { name, pos } for the Sun and each planet
+  const solar = { date: null, bodies: [] }; // bodies: { name, pos } for the Sun, each planet, then Webb
 
   // Places everything for the given date: the Sun and planets first, then each orbit as a loop of points.
   function buildSolar(date) {
@@ -367,6 +367,9 @@
       solar.bodies.push({ name, pos });
       put(pos, colour, size);
     }
+    // Webb last (index WEBB): pos is where it is drawn, set each frame by drawWebb(); true is where it is.
+    solar.bodies.push({ name: 'James Webb', full: 'James Webb Space Telescope', pos: solar.bodies[3].pos,
+                        true: webbPlace(date, solar.bodies[3].pos) });
     for (const [name, , , el, rate] of PLANETS) {
       const c = name === 'Earth' ? [0.22, 0.32, 0.5] : [0.13, 0.15, 0.21];
       for (let j = 0; j < ORBIT_STEPS; j++) {
@@ -1005,6 +1008,68 @@
   }
 
   // ---------------------------------------------------------------------------
+  // The James Webb Space Telescope in the solar system view. It circles the Sun–Earth L2 point, about 1.5 million km
+  // beyond the Earth on the side away from the Sun, in a halo loop that takes about six months, so it goes round
+  // the Sun with the Earth. The loop here is modelled: about the size NASA gives (its long way about as long as
+  // the Earth–L2 distance, up to about 520,000 km out of the ecliptic), at a made-up point along it, so its
+  // distances are close but not exact. At the solar system's scale it would sit inside the Earth's dot, so its
+  // offset from the Earth, and its loop, are drawn larger: WEBB_PX on screen, but never more than WEBB_MAX times.
+  // ---------------------------------------------------------------------------
+  const WEBB = 9; // its index in solar.bodies
+  const L2_AU = 1.5e6 / KM_PER_AU;
+  // The loop's half-sizes in km: away from the Sun, along the Earth's path, and out of the ecliptic.
+  const WEBB_LOOP = [120000, 750000, 450000];
+  const WEBB_DAYS = 180;  // a loop
+  const WEBB_START = 2.0; // radians along the loop at J2000, made up
+  const WEBB_PX = 60, WEBB_MAX = 25;
+  const WEBB_STEPS = 96;
+  const WEBB_COLOUR = [1.0, 0.8, 0.42], WEBB_LINE = [0.3, 0.24, 0.12];
+  const webbData = new Float32Array((WEBB_STEPS + 1) * SOLAR_STRIDE);
+  const webbBuf = gl.createBuffer();
+
+  // A point on the loop (u in radians along it) for an Earth at E (AU): L2, then the loop's offset along the axes
+  // away from the Sun (x), along the Earth's path (y) and north of the ecliptic (z).
+  function webbLoopPoint(E, u) {
+    const x = norm(E), z = [0, 1, 0], y = cross(z, x);
+    const k = [Math.cos(u) * WEBB_LOOP[0], Math.sin(u) * WEBB_LOOP[1], Math.cos(u) * WEBB_LOOP[2]];
+    return [0, 1, 2].map((i) => E[i] + x[i] * L2_AU + (x[i] * k[0] + y[i] * k[1] + z[i] * k[2]) / KM_PER_AU);
+  }
+  // Where Webb is on the date.
+  function webbPlace(date, E) {
+    const days = date.getTime() / 86400000 + 2440587.5 - 2451545;
+    return webbLoopPoint(E, WEBB_START + (days / WEBB_DAYS) * Math.PI * 2);
+  }
+
+  // Draws Webb and its loop with the solar system's program (already in use, its uniforms set), set out from the
+  // Earth as far as WEBB_PX on screen. It fades out, and can't be picked, when that gap is too small to see.
+  // Returns whether it is drawn.
+  function drawWebb(cam) {
+    const E = solar.bodies[3].pos, w = -dot(sub(E, cam.eye), cam.back);
+    if (w <= 0) return false;
+    const perAU = (proj.fx / w) * innerWidth / 2; // px per AU at the Earth
+    const scale = Math.min(WEBB_PX / (L2_AU * perAU), WEBB_MAX);
+    const gap = scale * L2_AU * perAU, fade = Math.min(1, Math.max(0, (gap - 14) / 14));
+    const out = (p) => [0, 1, 2].map((i) => E[i] + (p[i] - E[i]) * scale);
+    const body = solar.bodies[WEBB];
+    body.pos = out(body.true);
+    if (fade === 0) return false;
+    let k = 0;
+    const put = (p, c, size) => {
+      webbData.set([p[0], p[1], p[2], c[0] * fade, c[1] * fade, c[2] * fade, size], k);
+      k += SOLAR_STRIDE;
+    };
+    for (let j = 0; j < WEBB_STEPS; j++) put(out(webbLoopPoint(E, (j / WEBB_STEPS) * Math.PI * 2)), WEBB_LINE, 0);
+    put(body.pos, WEBB_COLOUR, 9);
+    use(solarProg, webbBuf, SOLAR_STRIDE, [[3, 0], [4, 3]]);
+    gl.bufferData(gl.ARRAY_BUFFER, webbData, gl.DYNAMIC_DRAW);
+    gl.uniform1f(sFlat, 1);
+    gl.drawArrays(gl.LINE_LOOP, 0, WEBB_STEPS);
+    gl.uniform1f(sFlat, 0);
+    gl.drawArrays(gl.POINTS, WEBB_STEPS, 1);
+    return true;
+  }
+
+  // ---------------------------------------------------------------------------
   // The tour: clicking the head flies the camera through the galaxy to the Sun's place in it, dives into the
   // Sun, crossfades to the solar system and eases in towards the Earth: "You are here".
   // ---------------------------------------------------------------------------
@@ -1178,14 +1243,14 @@
   }
 
   // Planet names, made once. Each is a button that picks its body (body: its index in solar.bodies).
-  const labelEls = PLANETS.map(([name]) => name).concat('Sun').map((name, k) => {
+  const labelEls = PLANETS.map(([name]) => name).concat('Sun', 'James Webb').map((name, k) => {
     const el = document.createElement('button');
     el.type = 'button';
     el.className = 'planet-label';
     el.dataset.name = name;
     el.textContent = name;
     el.setAttribute('aria-pressed', 'false');
-    const body = name === 'Sun' ? 0 : k + 1;
+    const body = name === 'Sun' ? 0 : name === 'James Webb' ? WEBB : k + 1;
     el.addEventListener('click', (e) => { e.stopPropagation(); select(body); });
     labels.appendChild(el);
     return { name, el, body };
@@ -1194,10 +1259,16 @@
   let sunText = '', earthText = '', bodyText = '';
   // A body's distance from the Sun for the day, from its position (in AU): "X million miles", "(Y million km) from
   // the Sun", in two parts so phones can put them on two lines.
+  // Webb's starts with its distance from the Earth.
   function distanceParts(body) {
-    const km = Math.hypot(...solar.bodies[body].pos) * KM_PER_AU;
+    const b = solar.bodies[body], pos = b.true || b.pos;
+    const km = Math.hypot(...pos) * KM_PER_AU;
     const big = (n) => (n < 1e9 ? (n / 1e6).toFixed(1) + ' million' : (n / 1e9).toFixed(2) + ' billion');
-    return [`${big(km / KM_PER_MILE)} miles`, `(${big(km)} km) from the Sun`];
+    const parts = [`${big(km / KM_PER_MILE)} miles`, `(${big(km)} km) from the Sun`];
+    if (body !== WEBB) return parts;
+    const near = Math.hypot(...sub(pos, solar.bodies[3].pos)) * KM_PER_AU;
+    const miles = (Math.round(near / KM_PER_MILE / 10000) * 10000).toLocaleString('en-GB');
+    return [`About ${miles} miles`, `(${big(near)} km) from the Earth,`, ...parts];
   }
   const spans = (parts) => parts.flatMap((text, i) => [i ? ' ' : '', Object.assign(document.createElement('span'), { textContent: text })]);
   // Call after buildSolar(date).
@@ -1218,12 +1289,13 @@
     selected = body === null || body === 3 || body === selected ? null : body;
     if (selected !== null) {
       const sun = selected === 0;
-      const name = sun ? 'The Sun' : solar.bodies[selected].name;
+      const name = sun ? 'The Sun' : solar.bodies[selected].full || solar.bodies[selected].name;
       const parts = sun ? ['26,700 light-years from the centre of the Milky Way'] : distanceParts(selected);
       document.getElementById('body-name').textContent = name;
       document.getElementById('body-distance').replaceChildren(...spans(parts));
       bodyMarker.classList.toggle('is-sun', sun);
-      bodyText = sun ? sunText.replace('about ', '') : `${name}, ${parts.join(' ')}.`;
+      bodyText = sun ? sunText.replace('about ', '') : `${name}, ${parts.join(' ').replace('About', 'about')}.`;
+      bodyMarker.classList.toggle('is-webb', selected === WEBB);
     }
     for (const { el, body: b } of labelEls) el.setAttribute('aria-pressed', String(b === selected));
     redraw();
@@ -1471,10 +1543,12 @@
         for (let i = 0; i < PLANETS.length; i++) gl.drawArrays(gl.LINE_LOOP, bodies + i * ORBIT_STEPS, ORBIT_STEPS);
         gl.uniform1f(sFlat, 0);
         gl.drawArrays(gl.POINTS, 0, bodies);
+        const webbShown = drawWebb(cam);
         bodyXY = solar.bodies.map((b) => project(b.pos, cam));
+        if (!webbShown) bodyXY[WEBB] = null;
         if (bodyXY[3]) { place(earthMarker, bodyXY[3]); fitLabel(earthMarker, bodyXY[3]); }
         if (selected !== null) placeBodyMarker(bodyXY[selected]);
-        placeLabels(cam);
+        placeLabels();
       }
       // The Earth and the Moon up close, over the Earth's dot.
       if (p > 0 && globe.ready) placeMoonMarker(drawGlobe(cam, view, axes, part(p, 0, 0.12), now), cam);
@@ -1499,25 +1573,37 @@
   // Names beside the Sun and planets, the Sun's first, then from the outside in. A name is left out when its
   // body is off screen, close to a body already named, or its text would touch another name or named body
   // (so the inner planets get theirs as the camera comes near).
-  function placeLabels(cam) {
+  function placeLabels() {
     // The markers' labels come first: names keep clear of them.
     const dots = [], boxes = [earthMarker, bodyMarker].filter((m) => m.classList.contains('is-shown')).map((m) => {
       const r = m.querySelector('.marker-label').getBoundingClientRect();
       return [r.left, r.top, r.right, r.bottom];
     });
-    for (const k of [8, 7, 6, 5, 4, 3, 2, 1, 0]) { // labelEls: the planets from Mercury, then the Sun
-      const { el, name } = labelEls[k];
-      const xy = project(solar.bodies[name === 'Sun' ? 0 : k + 1].pos, cam);
-      let clear = xy && xy[0] > -20 && xy[0] < innerWidth && xy[1] > 0 && xy[1] < innerHeight;
+    const fits = (xy, box) => box[2] < innerWidth - 4 &&
+      dots.every((p) => Math.hypot(p[0] - xy[0], p[1] - xy[1]) > 16 &&
+        !(p[0] > box[0] - 6 && p[0] < box[2] + 6 && p[1] > box[1] - 6 && p[1] < box[3] + 6)) &&
+      boxes.every((o) => box[0] > o[2] + 4 || box[2] < o[0] - 4 || box[1] > o[3] || box[3] < o[1]);
+    // labelEls: the Sun, the planets from Neptune in, then Webb, whose name may go on its dot's left (it sits just
+    // by the Earth, whose marker's label is on the right).
+    for (const k of [8, 7, 6, 5, 4, 3, 2, 1, 0, 9]) {
+      const { el, body } = labelEls[k];
+      const xy = bodyXY[body];
+      let clear = xy && xy[0] > -20 && xy[0] < innerWidth && xy[1] > 0 && xy[1] < innerHeight, left = false, up = false;
       if (clear) {
-        const x = xy[0] + parseFloat(getComputedStyle(el).marginLeft), h = el.offsetHeight;
-        const box = [x, xy[1] - h / 2, x + el.offsetWidth, xy[1] + h / 2];
-        clear = box[2] < innerWidth - 4 && dots.every((p) => Math.hypot(p[0] - xy[0], p[1] - xy[1]) > 16 &&
-                  !(p[0] > box[0] - 6 && p[0] < box[2] + 6 && p[1] > box[1] - 6 && p[1] < box[3] + 6)) &&
-                boxes.every((o) => box[0] > o[2] + 4 || box[2] < o[0] - 4 || box[1] > o[3] || box[3] < o[1]);
+        const gap = parseFloat(getComputedStyle(el).marginLeft), w = el.offsetWidth, h = el.offsetHeight;
+        let box = [xy[0] + gap, xy[1] - h / 2, xy[0] + gap + w, xy[1] + h / 2];
+        clear = fits(xy, box);
+        // Webb's other places: on the left, then on the left and raised half its height (on phones the Earth's
+        // label is under its ring, where Webb often is).
+        for (const raise of body === WEBB && !clear ? [0, h / 2 + 2] : []) {
+          box = [xy[0] - gap - w, xy[1] - h / 2 - raise, xy[0] - gap, xy[1] + h / 2 - raise];
+          if (box[0] > 4 && fits(xy, box)) { clear = left = true; up = raise > 0; break; }
+        }
         if (clear) { dots.push(xy); boxes.push(box); place(el, xy); }
       }
       el.classList.toggle('is-off', !clear);
+      el.classList.toggle('is-left', left);
+      el.classList.toggle('is-up', up);
     }
   }
 

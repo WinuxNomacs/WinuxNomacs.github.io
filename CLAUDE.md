@@ -68,5 +68,12 @@ A static GitHub Pages site (<https://winuxnomacs.github.io/>): one page, plain H
   dots for `skyProg`) at the Earth up close, on its true orbit (`ISS_HEIGHT`, `ISS_TILT`) at a made-up node
   (`ISS_NODE`) and sped up (`ISS_LAP` seconds a lap), dimmed in the Earth's shadow, with `#iss-marker`. Under
   reduced motion it stands still.
+- **Webb:** the Webb section of `main.js` (after the ISS) adds the James Webb Space Telescope to the solar system
+  view as `solar.bodies[WEBB]`. Its `true` place is L2 for the date plus a modelled halo loop (`webbLoopPoint()`,
+  `WEBB_LOOP`, `WEBB_DAYS`, a made-up `WEBB_START`). Its `pos` is where it is drawn: `drawWebb()` sets it each frame
+  further out from the Earth (`WEBB_PX` on screen, at most `WEBB_MAX` times), with its loop, and it fades out and
+  can't be picked when that gap is too small. Its name button may go on its dot's left, or raised
+  (`.planet-label.is-left`, `.is-up`), to clear the Earth's label. Picked, its marker shows its distances from the
+  Earth and from the Sun (`distanceParts()`).
 - **Eye glow position:** the glow is placed at the lit eye, which sits at 53.0% / 32.8% of the image.
   If the image changes, measure the eye again.

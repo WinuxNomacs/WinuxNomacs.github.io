@@ -843,6 +843,71 @@ body {
   outline-offset: 2px;
 }
 
+/* The Earth up close's layer buttons: lit when the layer is on. */
+.layers {
+  position: fixed;
+  right: 16px;
+  bottom: 4.5em;
+  z-index: 2;
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.8s ease, visibility 0.8s;
+}
+
+.layers.is-shown {
+  opacity: 1;
+  visibility: visible;
+}
+
+.layers button {
+  padding: 0.35em 0.8em 0.35em 0.65em;
+  border: 1px solid rgba(201, 206, 214, 0.25);
+  border-radius: 1em;
+  background: rgba(0, 0, 0, 0.5);
+  color: rgba(201, 206, 214, 0.55);
+  font: inherit;
+  font-size: clamp(0.75rem, 1.9vmin, 0.9rem);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: color 0.3s ease, border-color 0.3s ease;
+}
+
+/* A small light before the name: dark when off, gold when on. */
+.layers button::before {
+  content: '';
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  margin-right: 0.5em;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  vertical-align: 0.05em;
+}
+
+.layers button[aria-pressed="true"] {
+  color: var(--text);
+  border-color: rgba(201, 206, 214, 0.5);
+}
+
+.layers button[aria-pressed="true"]::before {
+  border-color: #f0c870;
+  background: #f0c870;
+  box-shadow: 0 0 6px #f0c870;
+}
+
+.layers button:hover,
+.layers button:focus-visible {
+  color: #d4d4e0;
+  border-color: rgba(201, 206, 214, 0.8);
+}
+
+.layers button:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 2px;
+}
+
 .zoom button[aria-disabled="true"] {
   opacity: 0.35;
   cursor: default;
@@ -937,7 +1002,7 @@ body {
   .marker--iss .marker-label { left: 0; top: 12px; }
 
   /* Clear of the note, which takes four lines here. */
-  .zoom { bottom: 6em; }
+  .zoom, .layers { bottom: 6em; }
 
   .marker--body.is-sun .marker-label { top: 32px; }
 
@@ -948,7 +1013,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .float[role="button"], .line--top, .back, .touring .back, .marker, .touring .quote,
-  .planet-label, .tour-note, .zoom, .globe-caption, .near-labels, .near-label { transition: none; }
+  .planet-label, .tour-note, .zoom, .globe-caption, .near-labels, .near-label, .layers, .layers button { transition: none; }
   .float, .eye-glow, .float[role="button"] .tilt, .float[role="button"] .tilt::before,
   .float[role="button"] .eye-glow, .float[role="button"]:hover .eye-glow,
   .float[role="button"]:focus-visible .eye-glow, .marker--earth .marker-ring { animation: none; }

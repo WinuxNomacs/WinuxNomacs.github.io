@@ -2,23 +2,7 @@
 
 ## Phases (current and upcoming)
 
-- **Up next:** 1. A clouds on/off control at the Earth up close
-- **Then:** 2. The cloud of space junk round the Earth up close
-
-## A clouds on/off control at the Earth up close
-
-**Request** (user, 2026-11-13, raised again after it was missed): UI controls at the Earth up close to turn the
-clouds on and off.
-
-**Builds on:** the globe shader in `docs/main.js` (`uClouds`, the cloud texture mixed over the day side and dimming
-the city lights and the ocean glint) and the Earth up close's controls ("← Back", the time caption).
-
-**Proposed phase:** a small control at the Earth up close that hides and shows the clouds (a shader uniform that
-scales the cloud layer, fading over about half a second), reachable by keyboard, with its state announced.
-
-**Decided** (user, 2026-11-13):
-- **Look:** a row of small on/off layer buttons at the bottom right (where the solar system's +/− zoom sits):
-  "Clouds" now, "Space junk" joining it in the next phase. The choice is remembered in the browser.
+- **Up next:** 1. The cloud of space junk round the Earth up close
 
 ## The cloud of space junk round the Earth up close
 
@@ -241,6 +225,17 @@ with a pointer on the Earth that says "You are here". Use real data where it exi
 - **Planet positions:** live, for the visitor's date.
 
 ## Done
+
+### A clouds on/off control at the Earth up close (2026-11-13)
+
+**Decided** (user): a row of small layer buttons at the bottom right, "Clouds" now and "Space junk" next; the
+choice is remembered in the browser.
+**Built** in `docs/index.html` (`#layers`, a `data-layer="clouds"` button with `aria-pressed`), `docs/main.js` (the
+globe section's `layers`, `stepLayers()`, the shader's `uCloudGain`; `showStage()` shows the row only at the globe)
+and `docs/style.css` (`.layers`, a gold light when on). Off, the clouds fade out in about half a second and the
+ocean glint and city lights show unclouded; under reduced motion they cut.
+**Checked** in headless Chromium (scratch `clouds.js`) at 1100×750, 390×844 and with reduced motion: the row shows
+only at the globe, Enter and a click toggle it, the choice survives a reload, Esc back hides it; no console errors.
 
 ### Nearest real stars between the galaxy and the solar system (2026-11-13)
 

@@ -47,7 +47,8 @@ showing briefly by the pad. It climbs away on a sweeping arc, stretched far beyo
 from here, and fades near the screen's edge, its exhaust trail fading after it. The International Space Station
 circles just above the surface on its true orbit (about 420 km up, tilted 51.6° to the equator, with a faint line
 along it), sped up so a lap takes two minutes rather than 93, and dimmer in the Earth's shadow; its place on the
-orbit is made up. A small ring and label mark it. "← Back" or Esc returns to the solar system.
+orbit is made up. A small ring and label mark it. A "Clouds" button at the bottom right turns the cloud layer off and
+on (the browser remembers the choice). "← Back" or Esc returns to the solar system.
 
 "← Back" or Esc flies back from any point; out in the galaxy and among the nearest stars (before the dive into the
 Sun), so does a click anywhere. With "reduce

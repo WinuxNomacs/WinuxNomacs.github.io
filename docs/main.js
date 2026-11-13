@@ -771,7 +771,19 @@
     }
     gl.disable(gl.CULL_FACE);
     // How much of the Moon is lit: half the cosine of the Sun–Moon–Earth angle, plus a half.
-    return { pos: M, km: moon.km, lit: (1 + dot(sun, moon.dir.map((v) => -v))) / 2 };
+    return { pos: M, km: moon.km, lit: (1 + dot(sun, moon.dir.map((v) => -v))) / 2, phase: moonPhase(sun, moon.dir) };
+  }
+
+  // The Moon's phase from its angle east of the Sun along the ecliptic (the drawing's y is the ecliptic's north).
+  // The four main phases are moments, so each is named only within about a day of it (12°).
+  function moonPhase(sun, dir) {
+    const d = (Math.atan2(sun[2] * dir[0] - sun[0] * dir[2], sun[0] * dir[0] + sun[2] * dir[2]) / RAD + 360) % 360;
+    const near = (a) => Math.abs(d - a) < 12;
+    if (near(0) || near(360)) return 'New Moon';
+    if (near(90)) return 'First quarter';
+    if (near(180)) return 'Full Moon';
+    if (near(270)) return 'Last quarter';
+    return ['Waxing crescent', 'Waxing gibbous', 'Waning gibbous', 'Waning crescent'][Math.floor(d / 90)];
   }
 
   // ---------------------------------------------------------------------------
@@ -965,6 +977,7 @@
   const zoomIn = document.getElementById('zoom-in'), zoomOut = document.getElementById('zoom-out');
   const earthDive = document.getElementById('earth-dive');
   const moonMarker = document.getElementById('moon-marker');
+  const moonPhaseEl = document.getElementById('moon-phase');
   const globeCaption = document.getElementById('globe-caption');
   let tourT = 0;    // seconds along the tour: 0 = landing page, AT_EARTH = "You are here"
   let tourGoal = 0; // 0 or AT_EARTH
@@ -1084,6 +1097,7 @@
     const info = `${round(m.km / KM_PER_MILE)} miles (${round(m.km)} km) away, ${Math.round(m.lit * 100)}% lit`;
     const el = document.getElementById('moon-info');
     if (el.textContent !== info) el.textContent = info;
+    if (moonPhaseEl.textContent !== m.phase) moonPhaseEl.textContent = m.phase;
   }
 
   // Lifts the banner to the top edge while touring (offsetTop ignores the lift itself).

@@ -15,7 +15,10 @@ the city lights and the ocean glint) and the Earth up close's controls ("← Bac
 
 **Proposed phase:** a small control at the Earth up close that hides and shows the clouds (a shader uniform that
 scales the cloud layer, fading over about half a second), reachable by keyboard, with its state announced.
-Open decisions: where it goes and whether it is remembered (see below).
+
+**Decided** (user, 2026-11-13):
+- **Look:** a row of small on/off layer buttons at the bottom right (where the solar system's +/− zoom sits):
+  "Clouds" now, "Space junk" joining it in the next phase. The choice is remembered in the browser.
 
 ## The cloud of space junk round the Earth up close
 
@@ -36,7 +39,14 @@ kilometres a day, while the shape of the cloud stays true for months.
 - SGP4 written into `main.js` (no library), positions for the visitor's moment, drawn as tiny points (sizes
   exaggerated, places true), hidden behind the Earth; a label/caption with the count and the data's date.
 - It works alongside the clouds control (a "space junk" on/off beside it).
-Open decisions: below.
+
+**Decided** (user, 2026-11-13):
+- **Objects:** everything tracked, colour-coded: debris, spent rocket bodies and dead satellites in one colour,
+  working satellites (Starlink and the rest) in another.
+- **Freshness:** a snapshot data file in the repo, refreshed by hand with the tool; the caption gives its date. No
+  Actions, no outside requests from visitors.
+- **Speed:** the same speed-up as the ISS (a low-orbit lap in about two minutes), true places at the moment of
+  arrival.
 
 ## The Moon's phase in its label
 

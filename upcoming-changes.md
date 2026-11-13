@@ -41,16 +41,13 @@ the Earth's dot even fully zoomed in, inside the dot as it is drawn.
   reads e.g. "1.5 million km (930,000 miles) from the Earth; 151.6 million km from the Sun".
 - Its place: L2 for the visitor's date, plus the halo loop.
 
-**Open decisions:**
-- **How exact:** L2 for the date (close to the truth, within the halo's few hundred thousand km), or its real
-  position from NASA JPL's Horizons, as a table made by a script in `tools/` covering the next few years (needs
-  remaking before it runs out).
-- **Seeing it beside the Earth:** its name and a thin line from the Earth's dot out to it (its place drawn larger
-  than true, as the planets' sizes are); or zooming further in near the Earth until the gap opens; or showing it
-  in the Earth up-close view as well (it is 235 Earth radii away, four times the Moon's distance, so mostly off
-  screen there).
-- **Its orbit line:** the Earth's orbit already traces its path round the Sun, so show the halo loop round L2
-  (only visible when drawn larger than true), or no extra line.
+**Decided** (user, 2026-11-13):
+- **How exact:** L2 for the date plus a modelled halo loop of the right size and period (about six months), at a
+  made-up point along it, computed in the page (no data file to keep up). Distances say "about".
+- **Seeing it:** a small point set out from the Earth's dot on the side away from the Sun, far enough to see
+  (drawn larger than true, as the planets' sizes are), with a "James Webb" name button like the planets', pickable
+  to show its distances from the Earth and the Sun.
+- **Its orbit line:** a faint halo loop round L2 at the same enlarged scale as its point.
 
 ## Rockets launching from the Earth up close
 

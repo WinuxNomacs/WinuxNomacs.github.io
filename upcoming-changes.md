@@ -226,6 +226,10 @@ with reduced motion shows the same sky with identical frames; no console errors.
 
 ### Small changes (2026-11-12)
 
+- **The Earth's ring beats** (2026-11-13): the ring round the Earth in the solar system view beats like the
+  head (2.9 s "lub-dub", swelling 22% with a brighter glow) to invite a click; it rests, lit, while "You are
+  here" is hovered or focused, and under reduced motion (`ring-beat` in `docs/style.css`).
+
 - **Star credit:** the note at the bottom of the solar system view ends "Real stars thanks to Yale's Bright Star
   Catalogue", linking to Harvard's page for the catalogue in a new tab (`.tour-credit` in `docs/index.html`); the note is no
   longer hidden from screen readers, and on phones the zoom buttons sit higher to clear it.

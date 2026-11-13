@@ -576,6 +576,22 @@ body {
   font-size: clamp(0.8rem, 2vmin, 0.95rem);
 }
 
+/* The ISS's marker at the Earth up close: smaller still. */
+.marker--iss .marker-ring {
+  left: -8px;
+  top: -8px;
+  width: 16px;
+  height: 16px;
+  border-color: rgba(160, 190, 240, 0.55);
+  box-shadow: none;
+}
+
+.marker--iss .marker-label {
+  left: 14px;
+  top: -0.6em;
+  font-size: clamp(0.75rem, 1.8vmin, 0.9rem);
+}
+
 /* A rocket's launch site at the Earth up close: a small, faint name beside the pad, fading slowly. */
 .marker--launch {
   transition: opacity 1.5s ease;
@@ -693,6 +709,10 @@ body {
 
   .marker--launch.is-left .marker-label {
     right: 10px;
+  }
+
+  .marker--iss.is-left .marker-label {
+    right: 14px;
   }
 
   /* Flipped: to the other side of the ring. */
@@ -841,6 +861,7 @@ body {
   .marker--earth .marker-label { text-align: center; }
   .marker--moon .marker-label { left: 0; top: 16px; }
   .marker--launch .marker-label { left: 0; top: 8px; }
+  .marker--iss .marker-label { left: 0; top: 12px; }
 
   /* Clear of the note, which takes four lines here. */
   .zoom { bottom: 6em; }

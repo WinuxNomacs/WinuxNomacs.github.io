@@ -35,8 +35,10 @@ circles it slowly. The Moon is there too, in its real place and phase, its dista
 view now and then; a small ring and label mark it, with its phase (such as "Waxing crescent"), distance and how much is lit. Every 10–20 seconds a tiny rocket lifts off from a real launch
 site on the side facing you (Cape Canaveral, Vandenberg, Starbase, Kourou, Baikonur, Wenchang and others), its name
 showing briefly by the pad. It climbs away on a sweeping arc, stretched far beyond a real ascent so it can be seen
-from here, and fades near the screen's edge, its exhaust trail fading after it. "← Back" or Esc returns to the
-solar system.
+from here, and fades near the screen's edge, its exhaust trail fading after it. The International Space Station
+circles just above the surface on its true orbit (about 420 km up, tilted 51.6° to the equator, with a faint line
+along it), sped up so a lap takes two minutes rather than 93, and dimmer in the Earth's shadow; its place on the
+orbit is made up. A small ring and label mark it. "← Back" or Esc returns to the solar system.
 
 "← Back" or Esc flies back from any point; out in the galaxy (before the dive into the Sun), so does a click
 anywhere. With "reduce

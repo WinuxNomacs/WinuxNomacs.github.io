@@ -822,6 +822,24 @@
   const siteUp = ([, lat, lon]) => [Math.cos(lat * RAD) * Math.cos(lon * RAD), Math.cos(lat * RAD) * Math.sin(lon * RAD),
                                     Math.sin(lat * RAD)];
 
+  // The camera seen from the Earth's centre (eye, in Earth radii): where a point relative to the camera lands on
+  // screen (null behind it), and whether the sight line to a point q (from the Earth's centre) meets the Earth first.
+  function earthView(cam) {
+    const eye = sub(cam.eye, solar.bodies[3].pos).map((v) => v / EARTH_RADIUS);
+    const W = innerWidth, H = innerHeight;
+    const screen = (v) => {
+      const w = -dot(v, cam.back);
+      return w > 0 ? [(dot(v, cam.right) * proj.fx / w + 1) / 2 * W, (1 - dot(v, cam.up) * proj.fy / w) / 2 * H] : null;
+    };
+    const hidden = (q) => {
+      const d = sub(q, eye), a = dot(d, d), b = dot(eye, d), disc = b * b - a * (dot(eye, eye) - 0.998);
+      if (disc <= 0) return false;
+      const s = (-b - Math.sqrt(disc)) / a;
+      return s > 0 && s < 1;
+    };
+    return { eye, screen, hidden };
+  }
+
   // The whole flight from a site, in the Earth's own axes: straight up at first, then tipping over towards the
   // heading while it speeds up, so it arcs away from the Earth.
   function rocketPath(site) {
@@ -866,25 +884,14 @@
 
   // Launches, moves and draws the rockets and their trails; gain (0..1) fades them as the camera leaves.
   function drawRockets(cam, view, axes, t, gain) {
-    const eye = sub(cam.eye, solar.bodies[3].pos).map((v) => v / EARTH_RADIUS);
+    const { eye, screen, hidden } = earthView(cam);
     if (!atGlobe()) rockets.next = Math.max(rockets.next, t + 2 + Math.random() * 2);
     else if (t >= rockets.next && rockets.list.length < ROCKETS_MAX) {
       rockets.next = t + (launchRocket(t, axes, eye) ? 10 + Math.random() * 10 : 2);
     }
     const W = innerWidth, H = innerHeight, margin = 0.12 * Math.min(W, H);
-    // Where a point (relative to the camera) lands on screen, and how far it is from fading at the edge (0..1).
-    const screen = (v) => {
-      const w = -dot(v, cam.back);
-      return w > 0 ? [(dot(v, cam.right) * proj.fx / w + 1) / 2 * W, (1 - dot(v, cam.up) * proj.fy / w) / 2 * H] : null;
-    };
+    // How far a point on screen is from fading at the edge (0..1).
     const edge = (xy) => (xy ? Math.max(0, Math.min(1, Math.min(xy[0], W - xy[0], xy[1], H - xy[1]) / margin)) : 0);
-    // Whether the sight line to q (from the Earth's centre) passes through the Earth first.
-    const hidden = (q) => {
-      const d = sub(q, eye), a = dot(d, d), b = dot(eye, d), disc = b * b - a * (dot(eye, eye) - 0.998);
-      if (disc <= 0) return false;
-      const s = (-b - Math.sqrt(disc)) / a;
-      return s > 0 && s < 1;
-    };
     let k = 0;
     const put = (v, c, bright, size) => {
       rocketData.set([v[0], v[1], v[2], c[0] * bright, c[1] * bright, c[2] * bright, size, 0], k);
@@ -924,6 +931,71 @@
     gl.bindBuffer(gl.ARRAY_BUFFER, rocketBuf);
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, rocketData.subarray(0, k));
     use(skyProg, rocketBuf, SKY_STRIDE, [[3, 0], [3, 3], [2, 6]]);
+    gl.uniformMatrix3fv(kView, false, view);
+    gl.uniform2f(kProj, proj.fx, proj.fy);
+    gl.uniform1f(kDpr, proj.dpr);
+    gl.uniform1f(kGain, gain);
+    gl.uniform1f(kTwinkle, 0);
+    gl.drawArrays(gl.POINTS, 0, k / SKY_STRIDE);
+  }
+
+  // ---------------------------------------------------------------------------
+  // The International Space Station: at the Earth up close, a bright point on the ISS's true orbit (about 420 km up,
+  // tilted 51.6° to the equator) with a faint line along it. Its place on the orbit is made up, and it is sped up so
+  // a lap takes two minutes rather than 93. Both hide behind the Earth, and the ISS dims in the Earth's shadow.
+  // Like the rockets, they are points for the sky's program, placed relative to the camera in Earth radii.
+  // ---------------------------------------------------------------------------
+  const ISS_HEIGHT = 420;         // km
+  const ISS_TILT = 51.6 * RAD;
+  const ISS_NODE = 40 * RAD;      // where it crosses the equator going north (right ascension): made up
+  const ISS_LAP = 120;            // seconds a lap takes here
+  const ISS_ORBIT_POINTS = 2400;  // dots along its orbit line, close enough to read as a line
+  const ISS_COLOUR = [0.93, 0.96, 1.0], ISS_LINE = [0.5, 0.66, 0.95];
+  const issData = new Float32Array((ISS_ORBIT_POINTS + 1) * SKY_STRIDE);
+  const issBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, issBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, issData.byteLength, gl.DYNAMIC_DRAW);
+  const issMarker = document.getElementById('iss-marker');
+
+  // The point u (radians) along the orbit from where it crosses the equator going north, from the Earth's centre in
+  // Earth radii and the drawing's axes. The orbit stays put among the stars while the Earth turns under it.
+  function issAt(u) {
+    const r = 1 + ISS_HEIGHT / (EARTH_RADIUS * KM_PER_AU), c = Math.cos(u) * r, s = Math.sin(u) * r;
+    return fromEquatorial([c * Math.cos(ISS_NODE) - s * Math.sin(ISS_NODE) * Math.cos(ISS_TILT),
+                           c * Math.sin(ISS_NODE) + s * Math.cos(ISS_NODE) * Math.cos(ISS_TILT), s * Math.sin(ISS_TILT)]);
+  }
+  const issOrbit = Array.from({ length: ISS_ORBIT_POINTS }, (_, i) => issAt((i / ISS_ORBIT_POINTS) * 2 * Math.PI));
+
+  // Draws the orbit line and the ISS, and places its marker; gain (0..1) fades them as the camera leaves.
+  function drawIss(cam, view, t, gain) {
+    const { eye, screen, hidden } = earthView(cam);
+    let k = 0;
+    const put = (v, c, bright, size) => {
+      issData.set([v[0], v[1], v[2], c[0] * bright, c[1] * bright, c[2] * bright, size, 0], k);
+      k += SKY_STRIDE;
+    };
+    // The line: where its dots crowd together on screen each is dimmer, so it is evenly faint all round.
+    let prev = null;
+    for (const q of issOrbit) {
+      const v = sub(q, eye), xy = screen(v);
+      const step = prev && xy ? Math.hypot(xy[0] - prev[0], xy[1] - prev[1]) : 1;
+      prev = xy;
+      if (xy && !hidden(q)) put(v, ISS_LINE, 0.45 * Math.min(1, step / 1.5), 2);
+    }
+    // The ISS, dimmed inside the Earth's shadow (a cylinder behind the Earth, away from the Sun).
+    const q = issAt(2 * Math.PI * ((t / ISS_LAP) % 1)), v = sub(q, eye), xy = screen(v);
+    const sun = norm(solar.bodies[3].pos.map((x) => -x)), along = dot(q, sun);
+    const off = Math.hypot(...sub(q, sun.map((x) => x * along)));
+    const lit = along > 0 ? 1 : Math.min(1, Math.max(0, (off - 1) / 0.03));
+    const seen = !!xy && !hidden(q);
+    if (seen) put(v, ISS_COLOUR, 0.3 + 1.3 * lit, 4);
+    const on = seen && atGlobe() && gain === 1 && xy[0] > 0 && xy[0] < innerWidth && xy[1] > 0 && xy[1] < innerHeight;
+    issMarker.classList.toggle('is-shown', on);
+    if (on) { place(issMarker, xy); fitLabel(issMarker, xy); }
+    if (!k) return;
+    gl.bindBuffer(gl.ARRAY_BUFFER, issBuf);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, issData.subarray(0, k));
+    use(skyProg, issBuf, SKY_STRIDE, [[3, 0], [3, 3], [2, 6]]);
     gl.uniformMatrix3fv(kView, false, view);
     gl.uniform2f(kProj, proj.fx, proj.fy);
     gl.uniform1f(kDpr, proj.dpr);
@@ -1410,11 +1482,14 @@
       // Rockets lifting off, fading out as the camera leaves the Earth.
       if (p > 0 && globe.ready && !reduced) drawRockets(cam, view, axes, t, part(p, 0.85, 0.15));
       else if (rockets.list.length || rockets.named || launchSite.classList.contains('is-shown')) clearRockets(t);
+      // The ISS on its orbit (standing still under reduced motion).
+      if (p > 0 && globe.ready) drawIss(cam, view, t, part(p, 0.85, 0.15));
+      else issMarker.classList.remove('is-shown');
     }
     // Out of the solar system: no comet, and the first one comes a few seconds after arriving again.
     if (solarFade === 0) { sky.comet = null; sky.next = t + 2 + Math.random() * 3; }
     labels.style.opacity = (solarFade * solarDim).toFixed(3);
-    if (solarFade === 0) { moonMarker.classList.remove('is-shown'); launchSite.classList.remove('is-shown'); }
+    if (solarFade === 0) [moonMarker, launchSite, issMarker].forEach((m) => m.classList.remove('is-shown'));
     frame = reduced ? null : requestAnimationFrame(draw);
   }
 

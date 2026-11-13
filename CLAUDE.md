@@ -62,6 +62,11 @@ A static GitHub Pages site (<https://winuxnomacs.github.io/>): one page, plain H
   up close from `LAUNCH_SITES` (name, latitude, longitude, heading) on the side facing the camera, and names the
   site (`#launch-site`). `rocketPath()` makes the whole flight in the Earth's own axes once; `drawRockets()` draws
   its trail and the rocket as points for `skyProg`, relative to the camera in Earth radii, hiding what the Earth
-  hides and fading near the screen's edge. None under reduced motion.
+  hides and fading near the screen's edge. None under reduced motion. `earthView()` (shared with the ISS) gives
+  the camera from the Earth's centre, where a point lands on screen and whether the Earth hides it.
+- **ISS:** the ISS section of `main.js` (after the rockets) draws the ISS and a faint orbit line (`issOrbit`,
+  dots for `skyProg`) at the Earth up close, on its true orbit (`ISS_HEIGHT`, `ISS_TILT`) at a made-up node
+  (`ISS_NODE`) and sped up (`ISS_LAP` seconds a lap), dimmed in the Earth's shadow, with `#iss-marker`. Under
+  reduced motion it stands still.
 - **Eye glow position:** the glow is placed at the lit eye, which sits at 53.0% / 32.8% of the image.
   If the image changes, measure the eye again.

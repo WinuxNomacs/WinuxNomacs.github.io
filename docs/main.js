@@ -775,6 +775,152 @@
   }
 
   // ---------------------------------------------------------------------------
+  // Rockets: at the Earth up close, every 10–20 seconds a small rocket lifts off from a real launch site on the side
+  // facing the camera, the site's name showing briefly. It rises, tips over towards its site's usual heading and
+  // climbs away on a sweeping arc, fading as it nears the screen's edge, and its exhaust trail fades after it. A real
+  // climb to orbit would be too small to see from here (about 3% of the Earth's radius), so the climb is stretched.
+  // The rockets are points for the sky's program, placed relative to the camera in Earth radii.
+  // ---------------------------------------------------------------------------
+  // Name, latitude and longitude (degrees), and the usual launch heading (degrees from north: east for most orbits,
+  // south for polar ones). Starbase stands in for Houston, which is Mission Control and has no launch pad.
+  const LAUNCH_SITES = [
+    ['Cape Canaveral', 28.5, -80.6, 90], ['Vandenberg', 34.7, -120.6, 180], ['Wallops', 37.9, -75.5, 120],
+    ['Starbase, Texas', 26.0, -97.2, 95], ['Kourou', 5.2, -52.8, 90], ['Baikonur', 45.9, 63.3, 65],
+    ['Plesetsk', 62.9, 40.6, 15], ['Vostochny', 51.9, 128.3, 40], ['Jiuquan', 41.0, 100.3, 140],
+    ['Taiyuan', 38.8, 111.6, 180], ['Wenchang', 19.6, 111.0, 100], ['Xichang', 28.2, 102.0, 100],
+    ['Sriharikota', 13.7, 80.2, 100], ['Tanegashima', 30.4, 131.0, 105], ['Mahia, New Zealand', -39.3, 177.9, 100],
+  ];
+  const ROCKET_STEP = 1 / 120;  // seconds between the points of a rocket's path (its trail is drawn from them)
+  const ROCKET_FLIGHT = 14;     // seconds at most: by then it has left the screen
+  const TRAIL_FADE = 1.8;       // seconds for the exhaust to fade to a third
+  const TRAIL_LINGER = 5;       // seconds the trail lasts once the rocket has gone
+  const ROCKETS_MAX = 3;
+  const SITE_LABEL = 4;         // seconds the site's name shows
+  const FLAME = [1.0, 0.86, 0.62], EXHAUST = [1.0, 0.68, 0.4], SMOKE = [0.72, 0.78, 0.9];
+  const ROCKET_POINTS = Math.ceil(ROCKET_FLIGHT / ROCKET_STEP) + 3;
+  const rocketData = new Float32Array(ROCKETS_MAX * ROCKET_POINTS * SKY_STRIDE);
+  const rocketBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, rocketBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, rocketData.byteLength, gl.DYNAMIC_DRAW);
+  const rockets = { list: [], next: 0, last: null, named: null };
+  const launchSite = document.getElementById('launch-site');
+
+  // A point in the Earth's own axes (in Earth radii) in the drawing's axes.
+  const onEarth = (axes, p) => [0, 1, 2].map((i) => axes[0][i] * p[0] + axes[1][i] * p[1] + axes[2][i] * p[2]);
+  const siteUp = ([, lat, lon]) => [Math.cos(lat * RAD) * Math.cos(lon * RAD), Math.cos(lat * RAD) * Math.sin(lon * RAD),
+                                    Math.sin(lat * RAD)];
+
+  // The whole flight from a site, in the Earth's own axes: straight up at first, then tipping over towards the
+  // heading while it speeds up, so it arcs away from the Earth.
+  function rocketPath(site) {
+    const lat = site[1] * RAD, lon = site[2] * RAD, h = site[3] * RAD, up = siteUp(site);
+    const east = [-Math.sin(lon), Math.cos(lon), 0];
+    const north = [-Math.sin(lat) * Math.cos(lon), -Math.sin(lat) * Math.sin(lon), Math.cos(lat)];
+    const ahead = east.map((e, i) => e * Math.sin(h) + north[i] * Math.cos(h));
+    const tilt = (65 + Math.random() * 15) * RAD, top = 0.5 + Math.random() * 0.2; // top speed, radii per second
+    const pts = [];
+    let p = up;
+    for (let k = 0; k < ROCKET_POINTS - 2; k++) {
+      pts.push(p);
+      const a = (k * ROCKET_STEP) / 10;
+      const pitch = tilt * ease(part(a, 0.05, 0.45));
+      const v = (0.004 + top * Math.min(1, a) ** 1.6) * ROCKET_STEP;
+      p = p.map((x, i) => x + (up[i] * Math.cos(pitch) + ahead[i] * Math.sin(pitch)) * v);
+    }
+    return pts;
+  }
+
+  // Lifts off from a site well inside the disc the camera sees (eye: the camera from the Earth's centre, in Earth
+  // radii), not the last one used; returns false when there is none.
+  function launchRocket(t, axes, eye) {
+    const toCam = norm(eye);
+    const open = LAUNCH_SITES.filter((s) => s !== rockets.last && dot(onEarth(axes, siteUp(s)), toCam) > 0.5);
+    if (!open.length) return false;
+    const site = open[Math.floor(Math.random() * open.length)];
+    const rocket = { site, born: t, pts: rocketPath(site), gone: null };
+    rockets.list.push(rocket);
+    rockets.last = site;
+    rockets.named = rocket;
+    document.getElementById('launch-name').textContent = site[0];
+    return true;
+  }
+
+  function clearRockets(t) {
+    rockets.list = [];
+    rockets.named = null;
+    rockets.next = t + 2 + Math.random() * 2; // the first one a few seconds after arriving
+    launchSite.classList.remove('is-shown');
+  }
+
+  // Launches, moves and draws the rockets and their trails; gain (0..1) fades them as the camera leaves.
+  function drawRockets(cam, view, axes, t, gain) {
+    const eye = sub(cam.eye, solar.bodies[3].pos).map((v) => v / EARTH_RADIUS);
+    if (!atGlobe()) rockets.next = Math.max(rockets.next, t + 2 + Math.random() * 2);
+    else if (t >= rockets.next && rockets.list.length < ROCKETS_MAX) {
+      rockets.next = t + (launchRocket(t, axes, eye) ? 10 + Math.random() * 10 : 2);
+    }
+    const W = innerWidth, H = innerHeight, margin = 0.12 * Math.min(W, H);
+    // Where a point (relative to the camera) lands on screen, and how far it is from fading at the edge (0..1).
+    const screen = (v) => {
+      const w = -dot(v, cam.back);
+      return w > 0 ? [(dot(v, cam.right) * proj.fx / w + 1) / 2 * W, (1 - dot(v, cam.up) * proj.fy / w) / 2 * H] : null;
+    };
+    const edge = (xy) => (xy ? Math.max(0, Math.min(1, Math.min(xy[0], W - xy[0], xy[1], H - xy[1]) / margin)) : 0);
+    // Whether the sight line to q (from the Earth's centre) passes through the Earth first.
+    const hidden = (q) => {
+      const d = sub(q, eye), a = dot(d, d), b = dot(eye, d), disc = b * b - a * (dot(eye, eye) - 0.998);
+      if (disc <= 0) return false;
+      const s = (-b - Math.sqrt(disc)) / a;
+      return s > 0 && s < 1;
+    };
+    let k = 0;
+    const put = (v, c, bright, size) => {
+      rocketData.set([v[0], v[1], v[2], c[0] * bright, c[1] * bright, c[2] * bright, size, 0], k);
+      k += SKY_STRIDE;
+    };
+    rockets.list = rockets.list.filter((r) => r.gone === null || t - r.gone < TRAIL_LINGER);
+    for (const r of rockets.list) {
+      const age = t - r.born, n = Math.min(r.pts.length - 1, Math.floor(age / ROCKET_STEP));
+      // The trail: hot just behind the rocket, then pale smoke fading away. Where the points crowd together on
+      // screen (slow at first, or seen end on) each is dimmer, so the trail is evenly bright along its length.
+      let prev = null;
+      for (let i = Math.max(0, n - Math.floor(TRAIL_FADE * 5 / ROCKET_STEP)); i <= n; i++) {
+        const q = onEarth(axes, r.pts[i]), v = sub(q, eye), xy = screen(v);
+        const step = prev && xy ? Math.hypot(xy[0] - prev[0], xy[1] - prev[1]) : 1;
+        prev = xy;
+        const since = age - i * ROCKET_STEP;
+        const b = 0.3 * Math.exp(-since / TRAIL_FADE) * Math.min(1, step) * edge(xy);
+        if (b > 0.002 && !hidden(q)) put(v, mix(EXHAUST, SMOKE, Math.min(1, since / 0.6)), b, 3);
+      }
+      if (r.gone !== null) continue;
+      // The rocket, flickering a little, and the glow of liftoff at the pad.
+      const q = onEarth(axes, r.pts[n]), v = sub(q, eye), e = edge(screen(v));
+      if ((age > 1 && e === 0) || n === r.pts.length - 1) { r.gone = t; continue; }
+      if (!hidden(q)) put(v, FLAME, e * (1.4 + 0.3 * Math.sin(t * 37)) * Math.min(1, age * 3), 3);
+      if (age < 2) put(sub(onEarth(axes, r.pts[0]), eye), FLAME, 0.35 * (1 - age / 2) * Math.min(1, age * 3), 9);
+    }
+    // The newest site's name, beside the pad for a few seconds (then it fades while still following the pad).
+    const named = rockets.named && rockets.list.includes(rockets.named) ? rockets.named : null;
+    if (named) {
+      const pad = onEarth(axes, named.pts[0]), xy = screen(sub(pad, eye));
+      const on = !!xy && !hidden(pad) && gain === 1 && t - named.born < SITE_LABEL;
+      launchSite.classList.toggle('is-shown', on);
+      if (xy) { place(launchSite, xy); fitLabel(launchSite, xy); }
+      if (t - named.born > SITE_LABEL + 2) rockets.named = null;
+    } else launchSite.classList.remove('is-shown');
+    if (!k) return;
+    gl.bindBuffer(gl.ARRAY_BUFFER, rocketBuf);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, rocketData.subarray(0, k));
+    use(skyProg, rocketBuf, SKY_STRIDE, [[3, 0], [3, 3], [2, 6]]);
+    gl.uniformMatrix3fv(kView, false, view);
+    gl.uniform2f(kProj, proj.fx, proj.fy);
+    gl.uniform1f(kDpr, proj.dpr);
+    gl.uniform1f(kGain, gain);
+    gl.uniform1f(kTwinkle, 0);
+    gl.drawArrays(gl.POINTS, 0, k / SKY_STRIDE);
+  }
+
+  // ---------------------------------------------------------------------------
   // The tour: clicking the head flies the camera through the galaxy to the Sun's place in it, dives into the
   // Sun, crossfades to the solar system and eases in towards the Earth: "You are here".
   // ---------------------------------------------------------------------------
@@ -1247,11 +1393,14 @@
       // The Earth and the Moon up close, over the Earth's dot.
       if (p > 0 && globe.ready) placeMoonMarker(drawGlobe(cam, view, axes, part(p, 0, 0.12), now), cam);
       else moonMarker.classList.remove('is-shown');
+      // Rockets lifting off, fading out as the camera leaves the Earth.
+      if (p > 0 && globe.ready && !reduced) drawRockets(cam, view, axes, t, part(p, 0.85, 0.15));
+      else if (rockets.list.length || rockets.named || launchSite.classList.contains('is-shown')) clearRockets(t);
     }
     // Out of the solar system: no comet, and the first one comes a few seconds after arriving again.
     if (solarFade === 0) { sky.comet = null; sky.next = t + 2 + Math.random() * 3; }
     labels.style.opacity = (solarFade * solarDim).toFixed(3);
-    if (solarFade === 0) moonMarker.classList.remove('is-shown');
+    if (solarFade === 0) { moonMarker.classList.remove('is-shown'); launchSite.classList.remove('is-shown'); }
     frame = reduced ? null : requestAnimationFrame(draw);
   }
 

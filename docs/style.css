@@ -576,6 +576,19 @@ body {
   font-size: clamp(0.8rem, 2vmin, 0.95rem);
 }
 
+/* A rocket's launch site at the Earth up close: a small, faint name beside the pad, fading slowly. */
+.marker--launch {
+  transition: opacity 1.5s ease;
+}
+
+.marker--launch .marker-label {
+  left: 10px;
+  top: -0.6em;
+  color: rgba(212, 212, 224, 0.7);
+  font-size: clamp(0.72rem, 1.7vmin, 0.85rem);
+  font-weight: 400;
+}
+
 /* "The Earth now", under the banner, at the Earth up close. */
 .globe-caption {
   position: fixed;
@@ -676,6 +689,10 @@ body {
 
   .marker--body.is-sun.is-left .marker-label {
     right: 34px;
+  }
+
+  .marker--launch.is-left .marker-label {
+    right: 10px;
   }
 
   /* Flipped: to the other side of the ring. */
@@ -823,6 +840,7 @@ body {
 
   .marker--earth .marker-label { text-align: center; }
   .marker--moon .marker-label { left: 0; top: 16px; }
+  .marker--launch .marker-label { left: 0; top: 8px; }
 
   /* Clear of the note, which takes four lines here. */
   .zoom { bottom: 6em; }

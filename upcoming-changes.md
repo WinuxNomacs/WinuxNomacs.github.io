@@ -2,8 +2,7 @@
 
 ## Phases (current and upcoming)
 
-- **Up next:** 1. Rockets launching from the Earth up close
-- **Later:** 2. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
+- **Later:** 1. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
 
 ## Rockets launching from the Earth up close
 
@@ -19,7 +18,7 @@ the Earth, and each rocket's trail fades away after it.
 - `atGlobe()` and `visit` in the tour section, for when the Earth is up close; `#moon-marker` for a small label
   placed on screen each frame.
 
-**Phase:**
+**Phase** (done, see below):
 - **Sites:** real launch sites at their true latitude and longitude, turning with the globe. Only sites on the
   side facing the camera launch, and never right at the edge of the disc.
 - **The rocket:** a tiny bright point (2–3 px), warm white like an engine flame. It rises straight up, then tips
@@ -179,6 +178,21 @@ with a pointer on the Earth that says "You are here". Use real data where it exi
 - **Planet positions:** live, for the visitor's date.
 
 ## Done
+
+### Rockets launching from the Earth up close (2026-11-13)
+
+**Built** in `docs/main.js` (the rockets section: `LAUNCH_SITES`, `rocketPath()`, `launchRocket()`,
+`drawRockets()`), `#launch-site` in `docs/index.html` and `.marker--launch` in `docs/style.css`. At the Earth up
+close, 2–4 s after arriving and then every 10–20 s, a rocket lifts off from one of 15 sites well inside the
+visible disc (never the same site twice running), with a brief glow at the pad. It tips over towards the site's
+heading and arcs away, a 3 px flickering point fading near the screen's edge; its trail is drawn from the flight's
+path points, dimmed where they crowd together on screen so it is evenly bright, and fades over a few seconds.
+Points the Earth hides are not drawn. The site's name shows for 4 s and fades over 1.5 s. Rockets fade out as the
+camera leaves; none under reduced motion.
+**Checked** in headless Chromium (scratch `rockets.js`) at 1280×800 and 390×844: launches from Vandenberg
+(south, over the Pacific and off the bottom), Kourou (east, off the right) and Cape Canaveral with their names
+by the pads; trails fade after the rockets; the name hides after Esc; 50–58 fps in software rendering; no console
+errors.
 
 ### Dive into a realistic Earth seen from space (2026-11-12)
 

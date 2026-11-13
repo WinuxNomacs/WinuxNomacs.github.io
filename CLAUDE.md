@@ -58,5 +58,10 @@ A static GitHub Pages site (<https://winuxnomacs.github.io/>): one page, plain H
   visitor's time zone, then circles (`visit.turn`). The images (`assets/img/earth-*.webp`, `moon.webp`, made by
   `tools/make-earth-images.js`) load when the tour reaches the Earth. "← Back" and Esc from there go back to the
   solar system (`leaveEarth()`).
+- **Rockets:** the rockets section of `main.js` (after the globe section) launches one every 10–20 s at the Earth
+  up close from `LAUNCH_SITES` (name, latitude, longitude, heading) on the side facing the camera, and names the
+  site (`#launch-site`). `rocketPath()` makes the whole flight in the Earth's own axes once; `drawRockets()` draws
+  its trail and the rocket as points for `skyProg`, relative to the camera in Earth radii, hiding what the Earth
+  hides and fading near the screen's edge. None under reduced motion.
 - **Eye glow position:** the glow is placed at the lit eye, which sits at 53.0% / 32.8% of the image.
   If the image changes, measure the eye again.

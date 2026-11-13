@@ -2,7 +2,51 @@
 
 ## Phases (current and upcoming)
 
-- No phases are planned. New requests go in `new.md`.
+- **Up next:** 1. A clouds on/off control at the Earth up close
+- **Then:** 2. The cloud of space junk round the Earth up close
+
+## A clouds on/off control at the Earth up close
+
+**Request** (user, 2026-11-13, raised again after it was missed): UI controls at the Earth up close to turn the
+clouds on and off.
+
+**Builds on:** the globe shader in `docs/main.js` (`uClouds`, the cloud texture mixed over the day side and dimming
+the city lights and the ocean glint) and the Earth up close's controls ("← Back", the time caption).
+
+**Proposed phase:** a small control at the Earth up close that hides and shows the clouds (a shader uniform that
+scales the cloud layer, fading over about half a second), reachable by keyboard, with its state announced.
+
+**Decided** (user, 2026-11-13):
+- **Look:** a row of small on/off layer buttons at the bottom right (where the solar system's +/− zoom sits):
+  "Clouds" now, "Space junk" joining it in the next phase. The choice is remembered in the browser.
+
+## The cloud of space junk round the Earth up close
+
+**Request** (user, 2026-11-13): if possible, accurately show the cloud of near-Earth space junk.
+
+**Builds on:** the ISS section (`issOrbit`, points for `skyProg` in Earth radii relative to the camera,
+`earthView()` for hiding what the Earth hides), the rockets' edge fade, and `tools/` scripts that make data files.
+
+**What "accurate" can mean here:** the tracked objects (from about 10 cm up in low orbit) have published orbital
+elements (GP data, "TLEs", from CelesTrak, from the US Space Force catalogue). Propagated with SGP4, each lands at
+its real place for a moment, so the shells over low orbit, the clusters from the big break-ups and the ring at
+geostationary height come out as they really are. Untracked debris (the far more numerous small fragments) has no
+positions and could only be shown as a modelled density. Elements go stale: positions along the orbit drift by
+kilometres a day, while the shape of the cloud stays true for months.
+
+**Proposed phase:**
+- A tool in `tools/` downloads the elements and writes a compact data file for `docs/`, stamped with its date.
+- SGP4 written into `main.js` (no library), positions for the visitor's moment, drawn as tiny points (sizes
+  exaggerated, places true), hidden behind the Earth; a label/caption with the count and the data's date.
+- It works alongside the clouds control (a "space junk" on/off beside it).
+
+**Decided** (user, 2026-11-13):
+- **Objects:** everything tracked, colour-coded: debris, spent rocket bodies and dead satellites in one colour,
+  working satellites (Starlink and the rest) in another.
+- **Freshness:** a snapshot data file in the repo, refreshed by hand with the tool; the caption gives its date. No
+  Actions, no outside requests from visitors.
+- **Speed:** the same speed-up as the ISS (a low-orbit lap in about two minutes), true places at the moment of
+  arrival.
 
 ## The Moon's phase in its label
 

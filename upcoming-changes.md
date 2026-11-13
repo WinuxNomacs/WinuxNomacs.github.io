@@ -2,9 +2,28 @@
 
 ## Phases (current and upcoming)
 
-- **Up next:** 1. The International Space Station round the Earth up close
-- **Then:** 2. The James Webb Space Telescope in the solar system
-- **Later:** 3. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
+- **Up next:** 1. The Moon's phase in its label
+- **Then:** 2. The International Space Station round the Earth up close; 3. The James Webb Space Telescope in the
+  solar system
+- **Later:** 4. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
+
+## The Moon's phase in its label
+
+**Request** (from `new.md`, 2026-11-13): add the Moon's current phase to its description text.
+
+**Builds on:** the Moon's marker at the Earth up close (`#moon-marker`, `placeMoonMarker()` in `docs/main.js`),
+whose label reads "The Moon" over "238,900 miles (384,400 km) away, 63% lit"; the lit fraction comes from the
+Sun–Moon–Earth angle in `drawGlobe()`.
+
+**Proposed phase (a small change):**
+- Name the phase from the Moon's angle from the Sun as seen from the Earth (its elongation, measured along the
+  ecliptic, so waxing and waning are told apart): New Moon, Waxing crescent, First quarter, Waxing gibbous, Full
+  Moon, Waning gibbous, Last quarter, Waning crescent. The four main phases are moments, so each is named only
+  within about a day of it (12° of elongation); between them the in-between names apply.
+- It uses the same visitor's moment as the rest of the Earth up close, so it agrees with the lit side drawn.
+
+**Decided** (user, 2026-11-13):
+- **Where in the label:** on its own small line under "The Moon", above the distance and % lit.
 
 ## The International Space Station round the Earth up close
 

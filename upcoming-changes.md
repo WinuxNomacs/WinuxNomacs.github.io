@@ -2,7 +2,27 @@
 
 ## Phases (current and upcoming)
 
-- No phases are planned. New requests go in `new.md`.
+- **Up next:** 1. The asteroid belt and Jupiter's Trojans in the solar system
+
+## The asteroid belt and Jupiter's Trojans in the solar system
+
+**Request** (user, 2026-11-13): add the asteroid belt between Mars and Jupiter.
+
+**Builds on:** the solar system section of `docs/main.js` (`PLANETS`, `buildSolar()` placing bodies for the date
+by Kepler's laws, `solarProg` dots, `solar.bodies`, `select()`, `placeLabels()`, `distanceParts()`), and the
+`tools/` pattern for data files.
+
+**Design:** a tool downloads the brightest asteroids' orbits from NASA JPL's Small-Body Database (public domain)
+and writes a compact file; the page places each at its true position for the visitor's date (Kepler's laws, as
+for the planets) and draws them as faint points, so the belt's real gaps and clumps show. Loaded when the tour
+reaches the solar system; credited in the note.
+
+**Decided** (user, 2026-11-13):
+- **Data:** real asteroids from JPL's Small-Body Database, each at its true place for the date.
+- **Count:** about 20,000 (the brightest).
+- **Extras:** Ceres, Vesta and Pallas get name buttons like the planets (picked: ringed, with the distance from
+  the Sun, Ceres noted as a dwarf planet); Jupiter's Trojans (the two swarms 60° ahead of and behind Jupiter) are
+  included. No on/off button.
 
 ## The Moon's phase in its label
 

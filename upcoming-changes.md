@@ -2,7 +2,64 @@
 
 ## Phases (current and upcoming)
 
-- **Later:** 1. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
+- **Up next:** 1. The International Space Station round the Earth up close
+- **Then:** 2. The James Webb Space Telescope in the solar system
+- **Later:** 3. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
+
+## The International Space Station round the Earth up close
+
+**Request** (from `new.md`, 2026-11-13): show the International Space Station orbiting the Earth in the Earth
+up-close view.
+
+**Builds on:** the globe section of `docs/main.js` (the Earth turned to the real moment by `earthAxes()`, drawn
+relative to the camera in Earth radii), the rockets' points for `skyProg` and their hiding behind the Earth
+(`drawRockets()`), and the Moon's marker (`#moon-marker`, `placeMoonMarker()`) for a small ring and label.
+
+**Proposed phase:**
+- The ISS as a small bright point about 420 km up (6.6% of the Earth's radius, so it skims just above the surface
+  at true scale), on its real orbit: tilted 51.6° to the equator, one lap in about 93 minutes. It is hidden while
+  behind the Earth, and dims in the Earth's shadow.
+- A faint line for its orbit, and a small marker like the Moon's: "International Space Station", its height and
+  speed (about 420 km up, 28,000 km/h).
+
+**Open decisions:**
+- **Where it really is now, or a true orbit at a made-up place?** Where it is now needs its current orbital
+  elements, which change daily: either each visitor's browser fetches them (from CelesTrak, a third-party request
+  that shares the visitor's address with it, and needs a fallback when it fails), or a copy is kept in the repo
+  (it drifts off by minutes along the orbit within a week or two, so it would need refreshing). A made-up place on
+  the true orbit needs neither.
+- **Speed:** real speed (a lap in 93 minutes: it creeps across the globe, about a quarter of the disc in 10
+  minutes), or sped up so a lap takes a minute or two.
+- **Its orbit line:** always shown, or not at all (just the moving point).
+
+## The James Webb Space Telescope in the solar system
+
+**Request** (from `new.md`, 2026-11-13): show the James Webb Space Telescope and its orbit round the Sun in the
+solar system view. When it is selected, show how far it is from the Earth and from the Sun.
+
+**Builds on:** the solar system section and exploring in `docs/main.js`: the bodies in `solar.bodies`, picking one
+with `select()` (the name buttons in `#planet-labels`, `#body-marker` with its distance), zoom (`zoom.z`).
+
+**Facts that shape it:** Webb circles the Sun–Earth L2 point, about 1.5 million km (0.01 AU) beyond the Earth on
+the side away from the Sun, in a large halo loop (about 250,000 × 800,000 km) that takes about six months. So it
+goes round the Sun along with the Earth, once a year. At the solar system's scale, 0.01 AU is a few pixels from
+the Earth's dot even fully zoomed in, inside the dot as it is drawn.
+
+**Proposed phase:**
+- Webb as a small point with its name button among the planets' names, pickable like them; picked, its marker
+  reads e.g. "1.5 million km (930,000 miles) from the Earth; 151.6 million km from the Sun".
+- Its place: L2 for the visitor's date, plus the halo loop.
+
+**Open decisions:**
+- **How exact:** L2 for the date (close to the truth, within the halo's few hundred thousand km), or its real
+  position from NASA JPL's Horizons, as a table made by a script in `tools/` covering the next few years (needs
+  remaking before it runs out).
+- **Seeing it beside the Earth:** its name and a thin line from the Earth's dot out to it (its place drawn larger
+  than true, as the planets' sizes are); or zooming further in near the Earth until the gap opens; or showing it
+  in the Earth up-close view as well (it is 235 Earth radii away, four times the Moon's distance, so mostly off
+  screen there).
+- **Its orbit line:** the Earth's orbit already traces its path round the Sun, so show the halo loop round L2
+  (only visible when drawn larger than true), or no extra line.
 
 ## Rockets launching from the Earth up close
 

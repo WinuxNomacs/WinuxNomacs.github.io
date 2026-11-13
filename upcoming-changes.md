@@ -2,8 +2,7 @@
 
 ## Phases (current and upcoming)
 
-- **Up next:** 1. The James Webb Space Telescope in the solar system
-- **Later:** 2. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
+- **Later:** 1. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
 
 ## The Moon's phase in its label
 
@@ -22,32 +21,6 @@ Sun–Moon–Earth angle in `drawGlobe()`.
 
 **Decided** (user, 2026-11-13):
 - **Where in the label:** on its own small line under "The Moon", above the distance and % lit.
-
-## The James Webb Space Telescope in the solar system
-
-**Request** (from `new.md`, 2026-11-13): show the James Webb Space Telescope and its orbit round the Sun in the
-solar system view. When it is selected, show how far it is from the Earth and from the Sun.
-
-**Builds on:** the solar system section and exploring in `docs/main.js`: the bodies in `solar.bodies`, picking one
-with `select()` (the name buttons in `#planet-labels`, `#body-marker` with its distance), zoom (`zoom.z`).
-
-**Facts that shape it:** Webb circles the Sun–Earth L2 point, about 1.5 million km (0.01 AU) beyond the Earth on
-the side away from the Sun, in a large halo loop (about 250,000 × 800,000 km) that takes about six months. So it
-goes round the Sun along with the Earth, once a year. At the solar system's scale, 0.01 AU is a few pixels from
-the Earth's dot even fully zoomed in, inside the dot as it is drawn.
-
-**Proposed phase:**
-- Webb as a small point with its name button among the planets' names, pickable like them; picked, its marker
-  reads e.g. "1.5 million km (930,000 miles) from the Earth; 151.6 million km from the Sun".
-- Its place: L2 for the visitor's date, plus the halo loop.
-
-**Decided** (user, 2026-11-13):
-- **How exact:** L2 for the date plus a modelled halo loop of the right size and period (about six months), at a
-  made-up point along it, computed in the page (no data file to keep up). Distances say "about".
-- **Seeing it:** a small point set out from the Earth's dot on the side away from the Sun, far enough to see
-  (drawn larger than true, as the planets' sizes are), with a "James Webb" name button like the planets', pickable
-  to show its distances from the Earth and the Sun.
-- **Its orbit line:** a faint halo loop round L2 at the same enlarged scale as its point.
 
 ## Rockets launching from the Earth up close
 
@@ -223,6 +196,22 @@ with a pointer on the Earth that says "You are here". Use real data where it exi
 - **Planet positions:** live, for the visitor's date.
 
 ## Done
+
+### The James Webb Space Telescope in the solar system (2026-11-13)
+
+**Request** (from `new.md`): show Webb and its orbit round the Sun in the solar system view, with its distances
+from the Earth and the Sun when picked. **Decided** (user): L2 for the date plus a modelled halo loop at a made-up
+point (no data file); drawn further out from the Earth than true, with a "James Webb" name button; a faint loop
+line at the same enlarged scale.
+**Built** in `docs/main.js` (the Webb section after the ISS: `webbLoopPoint()`, `webbPlace()`, `drawWebb()`; Webb
+is `solar.bodies[WEBB]` with `true` and drawn `pos`; `distanceParts()`, `select()` and `placeLabels()` handle it)
+and `docs/style.css` (`.planet-label.is-left`/`.is-up`, `.marker--body.is-webb`). A gold point 60 px out from the
+Earth on screen (at most 25 times its true offset) with its loop; zoomed out it fades and can't be picked. Its name
+goes right of its dot, else left, else left and raised, clear of "You are here". Picked: "James Webb Space
+Telescope", "About 1,060,000 miles (1.7 million km) from the Earth," then its distance from the Sun.
+**Checked** in headless Chromium (scratch `webb.js`) at 1100×750, 390×844 and with reduced motion: its name shows
+on arrival, picking it shows the distances (two lines on desktop, four on a phone) and the status text, zooming
+out three steps fades it and hides its marker; the Earth dive (scratch `iss.js`) still works; no console errors.
 
 ### The International Space Station round the Earth up close (2026-11-13)
 

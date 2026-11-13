@@ -2,7 +2,27 @@
 
 ## Phases (current and upcoming)
 
-- **Later:** 1. Nearest real stars between the galaxy and the solar system (tour phase 4, optional)
+- **Up next:** 1. Nearest real stars between the galaxy and the solar system
+
+## Nearest real stars between the galaxy and the solar system
+
+**Request** (tour plan, stage 4, optional): an in-between stage with the nearest real stars.
+
+**Builds on:** the tour timeline in `docs/main.js` (`HOLD` at the Sun's marker in the galaxy, then the dive at
+`LEAVE_SUN`, which fades the galaxy out and the solar system in); `skyProg` for star points; `tools/make-stars.py`
+and `docs/stars.bin` as the pattern for a star file; `#tour-note` for the credit.
+
+**Design:** after the hold at the Sun's marker, the galaxy fades and the nearest stars appear round the Sun in 3D,
+at their true distances and colours (brightness by true luminosity and distance). The camera drifts in through
+them, then dives into the Sun as now. A tool in `tools/` makes the star file; the note credits the catalogue.
+Reduced motion: the stage is a still cut like the others.
+
+**Decided** (user, 2026-11-13):
+- **Data:** the HYG catalogue (CC BY-SA 4.0); the derived star file is under that licence, credited on the page and
+  in the README.
+- **Reach:** stars within 20 light-years (about 130).
+- **Pacing:** passed through, adding about 5 s to the tour; 4–6 famous stars (such as Alpha Centauri, Barnard's
+  Star, Sirius) are briefly named with their distance. A click anywhere still goes back.
 
 ## The Moon's phase in its label
 
